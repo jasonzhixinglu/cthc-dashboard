@@ -1,0 +1,275 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.masthead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.5rem;
+  padding: 2rem;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(circle at top left, rgba(94, 122, 89, 0.14), transparent 28%),
+    linear-gradient(135deg, rgba(248, 246, 240, 0.95), rgba(255, 255, 255, 0.98));
+  border-radius: 1.25rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.meta-block {
+  display: grid;
+  gap: 0.4rem;
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.nav-tab {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.nav-tab:hover,
+.nav-tab:focus-visible {
+  border-color: var(--accent);
+  color: var(--heading);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.nav-tab.is-active {
+  background: var(--accent);
+  color: var(--panel-strong);
+  border-color: var(--accent);
+}
+
+.page-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.hero-grid,
+.two-column {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.hero-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric-card,
+.panel,
+.scenario-card,
+.empty-state-card {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 1.25rem;
+  box-shadow: 0 14px 30px rgba(22, 30, 26, 0.05);
+}
+
+.metric-card {
+  padding: 1.5rem;
+}
+
+.metric-label,
+.metric-note,
+.panel-subtitle {
+  color: var(--muted);
+}
+
+.metric-label {
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+}
+
+.metric-value {
+  margin: 0;
+  color: var(--heading);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1;
+  font-family: var(--heading);
+}
+
+.metric-note {
+  margin: 0.85rem 0 0;
+  font-size: 0.95rem;
+}
+
+.panel {
+  padding: 1.5rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.panel-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel-subtitle {
+  margin: 0.5rem 0 0;
+}
+
+.chart-shell {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.chart-frame {
+  fill: rgba(247, 243, 235, 0.7);
+  stroke: var(--border);
+  rx: 18px;
+}
+
+.chart-grid {
+  stroke: rgba(74, 87, 78, 0.14);
+  stroke-dasharray: 4 6;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.legend-swatch {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 999px;
+}
+
+.chart-axis {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.chart-empty {
+  padding: 2rem;
+  border: 1px dashed var(--border);
+  border-radius: 1rem;
+  color: var(--muted);
+}
+
+.selector {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.selector select {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.9rem;
+  font: inherit;
+  background: var(--panel-strong);
+  color: var(--heading);
+}
+
+.scenario-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.scenario-card {
+  padding: 1.2rem;
+}
+
+.empty-state-card {
+  padding: 1.2rem;
+  border-style: dashed;
+  background: rgba(255, 252, 245, 0.92);
+}
+
+.scenario-card h3,
+.empty-state-card h3 {
+  margin: 0 0 0.75rem;
+  color: var(--heading);
+}
+
+.scenario-card p,
+.methodology p {
+  margin: 0 0 0.85rem;
+}
+
+.methodology {
+  max-width: 72ch;
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    padding: 1rem;
+  }
+
+  .masthead,
+  .hero-grid,
+  .two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .masthead {
+    padding: 1.5rem;
+  }
+
+  .meta-block {
+    text-align: left;
+  }
+}

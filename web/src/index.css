@@ -1,0 +1,82 @@
+:root {
+  --bg: #f3efe6;
+  --panel: #fffdfa;
+  --panel-strong: #fff;
+  --text: #465148;
+  --heading: #172019;
+  --muted: #69756d;
+  --border: #d9d1c2;
+  --accent: #304b3b;
+  --series-gap: #335c67;
+  --series-growth: #b26b32;
+  --series-sector: #6d8b74;
+  --series-theta: #8c4f44;
+  --sans: 'Source Sans 3', 'Segoe UI', sans-serif;
+  --heading-font: 'Fraunces', 'Georgia', serif;
+
+  font-family: var(--sans);
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text);
+  background:
+    linear-gradient(180deg, rgba(255, 253, 249, 0.92), rgba(243, 239, 230, 0.96)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(73, 88, 75, 0.03) 0,
+      rgba(73, 88, 75, 0.03) 1px,
+      transparent 1px,
+      transparent 48px
+    );
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--heading-font);
+  color: var(--heading);
+  margin: 0;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: clamp(2.4rem, 6vw, 4.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+select {
+  font: inherit;
+}

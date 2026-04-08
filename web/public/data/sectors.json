@@ -1,0 +1,50 @@
+{
+  "dates": [
+    0,
+    1,
+    2
+  ],
+  "last_updated": "2026-04-08T18:30:56+00:00",
+  "scenario": "baseline",
+  "sector_names": [
+    "imports",
+    "electricity",
+    "industrial_va",
+    "retail_sales",
+    "fixed_asset_investment"
+  ],
+  "shares": {
+    "electricity": [
+      0.4275335499670569,
+      0.42269037812797167,
+      0.4505335337984459
+    ],
+    "fixed_asset_investment": [
+      0.11122019193435324,
+      0.10908472433200747,
+      0.10223568502697215
+    ],
+    "imports": [
+      0.0012572113385355375,
+      -0.01254956092179444,
+      -0.018853552934125096
+    ],
+    "industrial_va": [
+      0.15033523351388797,
+      0.15229649669045703,
+      0.1453185057766197
+    ],
+    "retail_sales": [
+      0.30965381324616637,
+      0.32847796177135835,
+      0.3207658283320874
+    ]
+  },
+  "theta": {
+    "electricity": [],
+    "fixed_asset_investment": [],
+    "imports": [],
+    "industrial_va": [],
+    "retail_sales": []
+  }
+}

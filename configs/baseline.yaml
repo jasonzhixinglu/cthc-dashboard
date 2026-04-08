@@ -1,0 +1,21 @@
+trend:
+  g0: 6.0
+  d: -0.025
+  sigma_u: 0.600
+
+cycle:
+  rho_c: 0.963
+  lambda_c: 0.078
+  sigma_omega: 0.632
+
+measurement:
+  sigma_eps_star: 0.872
+  sigma_tau: 2.015
+  sigma_psi: 2.033
+
+loadings:
+  imports: 2.560
+  electricity: 0.661
+  industrial_va: 1.957
+  retail_sales: 1.305
+  fixed_asset_investment: 2.089
