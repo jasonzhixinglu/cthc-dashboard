@@ -35,6 +35,8 @@ def main() -> None:
     args = parser.parse_args()
 
     data = pd.read_csv(args.input_csv)
+    data["date"] = data["date"].str.replace(r"(\d{4})Q(\d)", r"\1-Q\2", regex=True)
+    data = data.set_index("date")
     result = run_fixed_parameter_model(data, config_path=args.config)
     written_files = export_site_payload(
         result,

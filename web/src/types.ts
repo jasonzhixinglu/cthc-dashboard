@@ -11,7 +11,15 @@ export interface SeriesPayload {
   scenario: string
   dates: string[]
   output_gap: number[]
+  output_gap_p16?: number[]
+  output_gap_p84?: number[]
+  output_gap_p025?: number[]
+  output_gap_p975?: number[]
   potential_growth: number[]
+  potential_growth_p16?: number[]
+  potential_growth_p84?: number[]
+  potential_growth_p025?: number[]
+  potential_growth_p975?: number[]
   gdp_observed: Array<number | null>
   gdp_trend: number[]
 }

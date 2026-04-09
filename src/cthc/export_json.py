@@ -148,12 +148,24 @@ def build_series_payload(
 ) -> dict[str, object]:
     """Build time-series payloads for the frontend."""
     dates = [_serialize_scalar(value) for value in result.smoothed_states.index.tolist()]
+
+    gap_bands = _posterior_bands(result, "c_t", result.output_gap_series.to_numpy())
+    growth_bands = _posterior_bands(result, "g_t", result.potential_growth_series.to_numpy())
+
     payload = {
         "last_updated": _normalize_timestamp(last_updated),
         "scenario": scenario_name,
         "dates": dates,
         "output_gap": result.output_gap_series.tolist(),
+        "output_gap_p16": gap_bands["p16"],
+        "output_gap_p84": gap_bands["p84"],
+        "output_gap_p025": gap_bands["p025"],
+        "output_gap_p975": gap_bands["p975"],
         "potential_growth": result.potential_growth_series.tolist(),
+        "potential_growth_p16": growth_bands["p16"],
+        "potential_growth_p84": growth_bands["p84"],
+        "potential_growth_p025": growth_bands["p025"],
+        "potential_growth_p975": growth_bands["p975"],
         "gdp_observed": result.observed_data["gdp"].tolist(),
         "gdp_trend": result.smoothed_states["mu_t"].tolist(),
     }
@@ -209,6 +221,34 @@ def build_sectors_payload(
     return _make_serializable(
         payload
     )
+
+
+def _posterior_bands(
+    result: "ModelRunResult",
+    state_name: str,
+    mean: "np.ndarray",
+) -> dict[str, list]:
+    """Return ±1σ and ±2σ posterior bands for a named state.
+
+    Uses the diagonal of smoothed_covariances to get the posterior variance
+    at each time point, then builds symmetric bands around the smoothed mean.
+    Returns four lists: p16, p84 (±1σ) and p025, p975 (±2σ).
+    """
+    state_names = result.matrices.state_names
+    if state_name not in state_names:
+        nones: list = [None] * len(mean)
+        return {"p16": nones, "p84": nones, "p025": nones, "p975": nones}
+
+    idx = state_names.index(state_name)
+    variances = result.smoother_result.smoothed_covariances[:, idx, idx]
+    std = np.sqrt(np.maximum(variances, 0.0))
+
+    return {
+        "p16": (mean - std).tolist(),
+        "p84": (mean + std).tolist(),
+        "p025": (mean - 2.0 * std).tolist(),
+        "p975": (mean + 2.0 * std).tolist(),
+    }
 
 
 def current_timestamp() -> str:

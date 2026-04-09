@@ -95,13 +95,21 @@ function App() {
   return (
     <div className="app-shell">
       <header className="masthead">
-        <div>
-          <p className="eyebrow">CTHC Dashboard</p>
-          <h1>Fixed-Parameter Replication</h1>
+        <div className="masthead-title">
+          <p className="eyebrow">CTHC Model</p>
+          <h1>China: Output Gap &amp; Potential Growth</h1>
+          <p className="masthead-subtitle">Cointegrated Trends Harvey Cycle (CTHC) Model</p>
         </div>
-        <div className="meta-block">
-          <span>{data?.summary.scenario ?? 'Loading scenario'}</span>
-          <span>{data?.summary.last_updated ?? 'Loading date'}</span>
+        <div className="masthead-meta">
+          <p className="masthead-authors">
+            Andres Gonzalez Gomez · Jason Lu · Aneta Radzikowski
+          </p>
+          <p className="masthead-paper">Working paper forthcoming</p>
+          <p className="masthead-updated">
+            {data?.summary.sample_end
+              ? `Data through ${data.summary.sample_end}`
+              : 'Loading…'}
+          </p>
         </div>
       </header>
 
@@ -115,7 +123,7 @@ function App() {
       ) : null}
 
       {data ? (
-        <main className="page-grid">
+        <main className="page-grid" aria-live="polite">
           {page === 'overview' ? (
             <>
               <section className="hero-grid">
@@ -159,11 +167,23 @@ function App() {
                           name: 'Output Gap',
                           values: data.series.output_gap,
                           color: 'var(--series-gap)',
+                          band68: data.series.output_gap_p16 && data.series.output_gap_p84
+                            ? { lower: data.series.output_gap_p16, upper: data.series.output_gap_p84 }
+                            : undefined,
+                          band95: data.series.output_gap_p025 && data.series.output_gap_p975
+                            ? { lower: data.series.output_gap_p025, upper: data.series.output_gap_p975 }
+                            : undefined,
                         },
                         {
                           name: 'Potential Growth',
                           values: data.series.potential_growth,
                           color: 'var(--series-growth)',
+                          band68: data.series.potential_growth_p16 && data.series.potential_growth_p84
+                            ? { lower: data.series.potential_growth_p16, upper: data.series.potential_growth_p84 }
+                            : undefined,
+                          band95: data.series.potential_growth_p025 && data.series.potential_growth_p975
+                            ? { lower: data.series.potential_growth_p025, upper: data.series.potential_growth_p975 }
+                            : undefined,
                         },
                       ]}
                     />
@@ -200,6 +220,12 @@ function App() {
                           name: 'Output Gap',
                           values: data.series.output_gap,
                           color: 'var(--series-gap)',
+                          band68: data.series.output_gap_p16 && data.series.output_gap_p84
+                            ? { lower: data.series.output_gap_p16, upper: data.series.output_gap_p84 }
+                            : undefined,
+                          band95: data.series.output_gap_p025 && data.series.output_gap_p975
+                            ? { lower: data.series.output_gap_p025, upper: data.series.output_gap_p975 }
+                            : undefined,
                         },
                       ]}
                     />
@@ -219,6 +245,12 @@ function App() {
                           name: 'Potential Growth',
                           values: data.series.potential_growth,
                           color: 'var(--series-growth)',
+                          band68: data.series.potential_growth_p16 && data.series.potential_growth_p84
+                            ? { lower: data.series.potential_growth_p16, upper: data.series.potential_growth_p84 }
+                            : undefined,
+                          band95: data.series.potential_growth_p025 && data.series.potential_growth_p975
+                            ? { lower: data.series.potential_growth_p025, upper: data.series.potential_growth_p975 }
+                            : undefined,
                         },
                       ]}
                     />
@@ -295,28 +327,96 @@ function App() {
           {page === 'methodology' ? (
             <Panel
               title="Methodology"
-              subtitle="What is in scope for this replication and what is intentionally excluded."
+              subtitle="Model design, estimation, and data sources."
             >
               <div className="methodology">
-                <p>
-                  This site presents a fixed-parameter replication of the CTHC model using a
-                  linear Gaussian state-space system with Kalman filtering and Rauch-Tung-Striebel
-                  smoothing.
-                </p>
-                <p>
-                  The implementation includes deterministic matrix construction from the baseline
-                  configuration, missing-data handling through masked observations, and frontend
-                  payload export for summary, series, and sector views.
-                </p>
-                <p>
-                  Bayesian parameter estimation, Monte Carlo simulation, and broader model
-                  extensions are out of scope for this replication.
-                </p>
+                <section className="methodology-section">
+                  <h3>Overview</h3>
+                  <p>
+                    The CTHC model is a multivariate state-space framework that jointly
+                    estimates China's output gap and potential growth rate using GDP and five
+                    high-frequency sectoral indicators: imports, electricity output, industrial
+                    value added, retail sales, and fixed asset investment. By combining
+                    aggregate and sectoral information within a single coherent system, the
+                    model reduces the end-of-sample uncertainty that plagues univariate
+                    filters while providing a decomposition of the business cycle across
+                    sectors of the Chinese economy.
+                  </p>
+                </section>
+
+                <section className="methodology-section">
+                  <h3>Key innovations</h3>
+                  <ul>
+                    <li>
+                      <strong>Cointegrated trends.</strong> Each sectoral trend is modeled
+                      as aggregate potential output plus a slowly drifting sector-specific
+                      share, ensuring long-run coherence across sectors and preventing
+                      divergent trend estimates.
+                    </li>
+                    <li>
+                      <strong>Harvey cycle.</strong> The output gap is specified as a
+                      bivariate stochastic cycle with a fixed deterministic frequency,
+                      better suited to China's long business cycles than a standard AR
+                      specification and less prone to spurious high-frequency fluctuations.
+                    </li>
+                    <li>
+                      <strong>Secular drift.</strong> A negative deterministic drift in
+                      potential growth explicitly captures China's post-2008 convergence
+                      slowdown, reducing the tendency of statistical filters to
+                      systematically misread structural deceleration as a negative output
+                      gap.
+                    </li>
+                  </ul>
+                </section>
+
+                <section className="methodology-section">
+                  <h3>Estimation</h3>
+                  <p>
+                    Parameters are estimated by Bayesian MCMC using the No-U-Turn Sampler
+                    (NUTS/HMC) implemented in PyMC. A two-stage procedure is used:
+                    structural calibration from a cross-country G20 panel provides
+                    informative prior means for cycle loadings; the full NUTS chain then
+                    recovers the joint posterior over all remaining parameters. Credible
+                    interval bands displayed on this dashboard are derived from the
+                    Durbin–Koopman simulation smoother applied to each posterior draw.
+                  </p>
+                </section>
+
+                <section className="methodology-section">
+                  <h3>Data</h3>
+                  <p>
+                    Quarterly frequency, 2005-Q1 to present. Aggregate real GDP (National
+                    Bureau of Statistics) is the primary observable. The five sectoral
+                    indicators — imports, electricity output, industrial value added, retail
+                    sales, and fixed asset investment — enter as log-linearized series
+                    deflated to constant prices where applicable. Sectoral cycle loadings
+                    are calibrated from a cross-country G20 panel regression prior to
+                    Bayesian estimation.
+                  </p>
+                </section>
+
+                <section className="methodology-section">
+                  <h3>Cite this work</h3>
+                  <pre className="cite-block">{`Gonzalez Gomez, A., Lu, J., and Radzikowski, A. (2026). "A Practical Model for
+Estimating China's Potential Growth Rate and Output Gap."
+IMF Working Paper, forthcoming.`}</pre>
+                </section>
               </div>
             </Panel>
           ) : null}
         </main>
       ) : null}
+
+      <footer className="site-footer">
+        <p>© 2026 The Authors.</p>
+        <p className="footer-disclaimer">
+          Views expressed are those of the authors and do not represent the views of the
+          IMF, its Executive Board, or IMF management.
+        </p>
+        <p>
+          <span className="footer-paper-link">Working Paper (forthcoming)</span>
+        </p>
+      </footer>
     </div>
   )
 }
