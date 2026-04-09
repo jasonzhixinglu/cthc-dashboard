@@ -1,10 +1,11 @@
 import type { DashboardData, SectorsPayload, SeriesPayload, SummaryPayload } from '../types'
 
 export async function loadDashboardData(): Promise<DashboardData> {
+  const base = import.meta.env.BASE_URL
   const [summary, series, sectors] = await Promise.all([
-    loadJson<SummaryPayload>('/data/summary.json'),
-    loadJson<SeriesPayload>('/data/series.json'),
-    loadJson<SectorsPayload>('/data/sectors.json'),
+    loadJson<SummaryPayload>(`${base}data/summary.json`),
+    loadJson<SeriesPayload>(`${base}data/series.json`),
+    loadJson<SectorsPayload>(`${base}data/sectors.json`),
   ])
 
   return {
