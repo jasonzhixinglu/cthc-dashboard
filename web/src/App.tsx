@@ -98,7 +98,7 @@ function App() {
         <div className="masthead-title">
           <p className="eyebrow">CTHC Model</p>
           <h1>China: Output Gap &amp; Potential Growth</h1>
-          <p className="masthead-subtitle">Cointegrated Trends Harvey Cycle (CTHC) Model</p>
+          <p className="masthead-subtitle">Cointegrated Trends Harvey Cycle Model</p>
         </div>
         <div className="masthead-meta">
           <p className="masthead-authors">
@@ -126,142 +126,141 @@ function App() {
         <main className="page-grid" aria-live="polite">
           {page === 'overview' ? (
             <>
-              <section className="hero-grid">
+              {/* Key statistics */}
+              <section className="stat-bar">
                 {summaryReady ? (
                   <>
                     <MetricCard
                       label="Latest Output Gap"
-                      value={formatNumber(data.summary.latest_output_gap)}
+                      value={formatPercent(data.summary.latest_output_gap)}
                       note={`Sample end ${data.summary.sample_end ?? 'n/a'}`}
                     />
                     <MetricCard
                       label="Latest Potential Growth"
-                      value={formatNumber(data.summary.latest_potential_growth)}
-                      note={`Scenario ${data.summary.scenario}`}
+                      value={formatPercent(data.summary.latest_potential_growth)}
+                      note={`Scenario: ${data.summary.scenario}`}
                     />
                   </>
                 ) : (
                   <>
                     <EmptyStateCard
                       title="Summary data missing"
-                      message="`summary.json` is missing or does not contain current output-gap values yet."
+                      message="`summary.json` does not contain current values yet."
                     />
                     <EmptyStateCard
                       title="Summary data missing"
-                      message="`summary.json` is missing or does not contain current potential-growth values yet."
+                      message="`summary.json` does not contain current values yet."
                     />
                   </>
                 )}
               </section>
 
-              <section className="two-column">
-                <Panel
-                  title="Series Snapshot"
-                  subtitle="Smoothed estimates from the fixed-parameter state-space run."
-                >
-                  {seriesReady ? (
-                    <LineChart
-                      labels={data.series.dates}
-                      series={[
-                        {
-                          name: 'Output Gap',
-                          values: data.series.output_gap,
-                          color: 'var(--series-gap)',
-                          band68: data.series.output_gap_p16 && data.series.output_gap_p84
-                            ? { lower: data.series.output_gap_p16, upper: data.series.output_gap_p84 }
-                            : undefined,
-                          band95: data.series.output_gap_p025 && data.series.output_gap_p975
-                            ? { lower: data.series.output_gap_p025, upper: data.series.output_gap_p975 }
-                            : undefined,
-                        },
-                        {
-                          name: 'Potential Growth',
-                          values: data.series.potential_growth,
-                          color: 'var(--series-growth)',
-                          band68: data.series.potential_growth_p16 && data.series.potential_growth_p84
-                            ? { lower: data.series.potential_growth_p16, upper: data.series.potential_growth_p84 }
-                            : undefined,
-                          band95: data.series.potential_growth_p025 && data.series.potential_growth_p975
-                            ? { lower: data.series.potential_growth_p025, upper: data.series.potential_growth_p975 }
-                            : undefined,
-                        },
-                      ]}
-                    />
-                  ) : (
-                    <EmptyStateCard
-                      title="Series data missing"
-                      message="`series.json` has not been generated yet, so no output-gap or growth chart is available."
-                    />
-                  )}
-                </Panel>
-                <Panel
-                  title="Replication Scope"
-                  subtitle="This dashboard reflects the constrained, fixed-parameter replication only."
-                >
-                  <p>
-                    Parameters are loaded from the baseline YAML, the state-space system is
-                    constructed deterministically, and the site reads the exported JSON payloads
-                    directly from `public/data`.
-                  </p>
-                </Panel>
-              </section>
+              {/* Full-width chart */}
+              <Panel
+                title="Output Gap &amp; Potential Growth"
+                subtitle={`Smoothed Kalman estimates with 68% and 95% posterior credible intervals · ${data.series.dates[0] ?? ''}–${data.series.dates[data.series.dates.length - 1] ?? ''}`}
+              >
+                {seriesReady ? (
+                  <LineChart
+                    labels={data.series.dates}
+                    series={[
+                      {
+                        name: 'Output Gap',
+                        values: data.series.output_gap,
+                        color: 'var(--series-gap)',
+                        band68: data.series.output_gap_p16 && data.series.output_gap_p84
+                          ? { lower: data.series.output_gap_p16, upper: data.series.output_gap_p84 }
+                          : undefined,
+                        band95: data.series.output_gap_p025 && data.series.output_gap_p975
+                          ? { lower: data.series.output_gap_p025, upper: data.series.output_gap_p975 }
+                          : undefined,
+                      },
+                      {
+                        name: 'Potential Growth',
+                        values: data.series.potential_growth,
+                        color: 'var(--series-growth)',
+                        band68: data.series.potential_growth_p16 && data.series.potential_growth_p84
+                          ? { lower: data.series.potential_growth_p16, upper: data.series.potential_growth_p84 }
+                          : undefined,
+                        band95: data.series.potential_growth_p025 && data.series.potential_growth_p975
+                          ? { lower: data.series.potential_growth_p025, upper: data.series.potential_growth_p975 }
+                          : undefined,
+                      },
+                    ]}
+                  />
+                ) : (
+                  <EmptyStateCard
+                    title="Series data missing"
+                    message="`series.json` has not been generated yet."
+                  />
+                )}
+              </Panel>
+
+              {/* Plain description */}
+              <p className="dashboard-description">
+                The CTHC model jointly estimates China&rsquo;s output gap and potential growth
+                rate using quarterly GDP and five high-frequency sectoral indicators: imports,
+                electricity output, industrial value added, retail sales, and fixed asset
+                investment. Shaded bands show 68% and 95% posterior credible intervals derived
+                from the Rauch&ndash;Tung&ndash;Striebel smoother applied to each posterior
+                draw.
+              </p>
             </>
           ) : null}
 
           {page === 'explorer' ? (
             <>
-              <section className="two-column">
-                <Panel title="Output Gap">
-                  {seriesReady ? (
-                    <LineChart
-                      labels={data.series.dates}
-                      series={[
-                        {
-                          name: 'Output Gap',
-                          values: data.series.output_gap,
-                          color: 'var(--series-gap)',
-                          band68: data.series.output_gap_p16 && data.series.output_gap_p84
-                            ? { lower: data.series.output_gap_p16, upper: data.series.output_gap_p84 }
-                            : undefined,
-                          band95: data.series.output_gap_p025 && data.series.output_gap_p975
-                            ? { lower: data.series.output_gap_p025, upper: data.series.output_gap_p975 }
-                            : undefined,
-                        },
-                      ]}
-                    />
-                  ) : (
-                    <EmptyStateCard
-                      title="Series data missing"
-                      message="`series.json` does not contain output-gap observations yet."
-                    />
-                  )}
-                </Panel>
-                <Panel title="Potential Growth">
-                  {seriesReady ? (
-                    <LineChart
-                      labels={data.series.dates}
-                      series={[
-                        {
-                          name: 'Potential Growth',
-                          values: data.series.potential_growth,
-                          color: 'var(--series-growth)',
-                          band68: data.series.potential_growth_p16 && data.series.potential_growth_p84
-                            ? { lower: data.series.potential_growth_p16, upper: data.series.potential_growth_p84 }
-                            : undefined,
-                          band95: data.series.potential_growth_p025 && data.series.potential_growth_p975
-                            ? { lower: data.series.potential_growth_p025, upper: data.series.potential_growth_p975 }
-                            : undefined,
-                        },
-                      ]}
-                    />
-                  ) : (
-                    <EmptyStateCard
-                      title="Series data missing"
-                      message="`series.json` does not contain potential-growth observations yet."
-                    />
-                  )}
-                </Panel>
-              </section>
+              <Panel title="Output Gap">
+                {seriesReady ? (
+                  <LineChart
+                    labels={data.series.dates}
+                    series={[
+                      {
+                        name: 'Output Gap',
+                        values: data.series.output_gap,
+                        color: 'var(--series-gap)',
+                        band68: data.series.output_gap_p16 && data.series.output_gap_p84
+                          ? { lower: data.series.output_gap_p16, upper: data.series.output_gap_p84 }
+                          : undefined,
+                        band95: data.series.output_gap_p025 && data.series.output_gap_p975
+                          ? { lower: data.series.output_gap_p025, upper: data.series.output_gap_p975 }
+                          : undefined,
+                      },
+                    ]}
+                  />
+                ) : (
+                  <EmptyStateCard
+                    title="Series data missing"
+                    message="`series.json` does not contain output-gap observations yet."
+                  />
+                )}
+              </Panel>
+
+              <Panel title="Potential Growth">
+                {seriesReady ? (
+                  <LineChart
+                    labels={data.series.dates}
+                    series={[
+                      {
+                        name: 'Potential Growth',
+                        values: data.series.potential_growth,
+                        color: 'var(--series-growth)',
+                        band68: data.series.potential_growth_p16 && data.series.potential_growth_p84
+                          ? { lower: data.series.potential_growth_p16, upper: data.series.potential_growth_p84 }
+                          : undefined,
+                        band95: data.series.potential_growth_p025 && data.series.potential_growth_p975
+                          ? { lower: data.series.potential_growth_p025, upper: data.series.potential_growth_p975 }
+                          : undefined,
+                      },
+                    ]}
+                  />
+                ) : (
+                  <EmptyStateCard
+                    title="Series data missing"
+                    message="`series.json` does not contain potential-growth observations yet."
+                  />
+                )}
+              </Panel>
 
               <Panel
                 title="Sector Decomposition"
@@ -293,7 +292,7 @@ function App() {
                 ) : (
                   <EmptyStateCard
                     title="Sector data missing"
-                    message="`sectors.json` has not been generated yet, so sector decomposition is unavailable."
+                    message="`sectors.json` has not been generated yet."
                   />
                 )}
               </Panel>
@@ -459,11 +458,12 @@ function createEmptyDashboardData(): DashboardData {
   }
 }
 
-function formatNumber(value: number | null): string {
+function formatPercent(value: number | null): string {
   if (value === null || Number.isNaN(value)) {
     return 'n/a'
   }
-  return value.toFixed(1)
+  const pct = value * 100
+  return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`
 }
 
 function formatSectorLabel(value: string): string {
