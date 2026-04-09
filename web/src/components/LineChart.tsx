@@ -5,8 +5,9 @@ type Band = {
 
 type ChartSeries = {
   name: string
-  values: number[]
+  values: Array<number | null>
   color: string
+  dashed?: boolean
   band68?: Band
   band95?: Band
 }
@@ -15,6 +16,8 @@ type LineChartProps = {
   labels: string[]
   series: ChartSeries[]
   sourceNote?: string
+  yAxisLabel?: string
+  yFormatter?: (value: number) => string
 }
 
 const WIDTH = 860
@@ -35,12 +38,12 @@ function niceTickStep(range: number, n: number): number {
   return mag * 10
 }
 
-export function LineChart({ labels, series, sourceNote }: LineChartProps) {
+export function LineChart({ labels, series, sourceNote, yAxisLabel, yFormatter }: LineChartProps) {
   const allValues = [
     ...series.flatMap((item) => item.values),
     ...series.flatMap((item) => item.band95?.lower ?? []),
     ...series.flatMap((item) => item.band95?.upper ?? []),
-  ].filter((value) => Number.isFinite(value))
+  ].filter((value): value is number => Number.isFinite(value))
 
   if (labels.length === 0 || allValues.length === 0) {
     return <div className="chart-empty">No chart data available.</div>
@@ -69,17 +72,23 @@ export function LineChart({ labels, series, sourceNote }: LineChartProps) {
     return PAD.top + innerH - ((value - axisMin) / axisRange) * innerH
   }
 
-  // Integer percent label, no sign prefix, no decimal
-  function formatTick(value: number): string {
-    return String(Math.round(value * 100))
-  }
+  // Default: integer percent (×100, no sign, no decimal). Override via yFormatter prop.
+  const formatTick = yFormatter ?? ((value: number) => String(Math.round(value * 100)))
 
-  function buildLinePath(values: number[]) {
+  function buildLinePath(values: Array<number | null>) {
+    let penDown = false
     return values
       .map((value, index) => {
+        if (value === null || !Number.isFinite(value)) {
+          penDown = false
+          return ''
+        }
         const x = toX(index)
-        return `${index === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${toY(value).toFixed(1)}`
+        const cmd = penDown ? 'L' : 'M'
+        penDown = true
+        return `${cmd} ${x.toFixed(1)} ${toY(value).toFixed(1)}`
       })
+      .filter(Boolean)
       .join(' ')
   }
 
@@ -120,7 +129,7 @@ export function LineChart({ labels, series, sourceNote }: LineChartProps) {
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="chart-svg" role="img">
         <rect x="0" y="0" width={WIDTH} height={HEIGHT} className="chart-frame" />
 
-        {/* "Percent" rotated Y-axis label */}
+        {/* Rotated Y-axis label */}
         <text
           x={10}
           y={centerY}
@@ -130,7 +139,7 @@ export function LineChart({ labels, series, sourceNote }: LineChartProps) {
           fill="#9a9a9a"
           transform={`rotate(-90, 10, ${centerY})`}
         >
-          Percent
+          {yAxisLabel ?? 'Percent'}
         </text>
 
         {/* Horizontal grid lines + Y-axis tick labels */}
@@ -198,6 +207,7 @@ export function LineChart({ labels, series, sourceNote }: LineChartProps) {
               strokeWidth="2"
               strokeLinejoin="round"
               strokeLinecap="round"
+              strokeDasharray={item.dashed ? '5,4' : undefined}
             />
           </g>
         ))}

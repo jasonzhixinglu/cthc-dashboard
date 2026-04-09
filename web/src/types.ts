@@ -33,6 +33,11 @@ export interface SectorsPayload {
   sector_names: string[]
   shares: Record<string, number[]>
   theta: Record<string, number[]>
+  // Sector decomposition fields — optional so older JSON files don't break
+  cycle_agg?: number[]
+  observed?: Record<string, Array<number | null>>
+  trend?: Record<string, number[]>
+  cycle_sector?: Record<string, number[]>
 }
 
 export interface DashboardData {

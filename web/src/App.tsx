@@ -59,19 +59,19 @@ function App() {
     )
   }, [data])
 
-  const sectorContribution = useMemo(() => {
-    if (!data || !selectedSector) {
-      return []
-    }
-    const shares = data.sectors.shares[selectedSector] ?? []
-    return shares.map((share, index) => share * (data.series.output_gap[index] ?? 0))
+  const sectorObserved = useMemo(() => {
+    if (!data || !selectedSector) return undefined
+    return data.sectors.observed?.[selectedSector]
   }, [data, selectedSector])
 
-  const sectorTheta = useMemo(() => {
-    if (!data || !selectedSector) {
-      return []
-    }
-    return data.sectors.theta[selectedSector] ?? []
+  const sectorTrend = useMemo(() => {
+    if (!data || !selectedSector) return undefined
+    return data.sectors.trend?.[selectedSector]
+  }, [data, selectedSector])
+
+  const sectorCycle = useMemo(() => {
+    if (!data || !selectedSector) return undefined
+    return data.sectors.cycle_sector?.[selectedSector]
   }, [data, selectedSector])
 
   const summaryReady = Boolean(
@@ -282,12 +282,14 @@ function App() {
                   </label>
                 }
               >
-                {sectorsReady && seriesReady && selectedSector ? (
+                {sectorsReady && selectedSector ? (
                   <SectorDecompositionChart
-                    labels={data.series.dates}
-                    contribution={sectorContribution}
-                    theta={sectorTheta}
+                    labels={data.sectors.dates}
                     sectorName={selectedSector}
+                    observed={sectorObserved}
+                    trend={sectorTrend}
+                    cycleSector={sectorCycle}
+                    cycleAgg={data.sectors.cycle_agg}
                   />
                 ) : (
                   <EmptyStateCard

@@ -217,11 +217,38 @@ def build_sectors_payload(
     """Build sector-oriented payloads for the frontend."""
     sector_names = list(result.sector_share_series.columns)
     dates = [_serialize_scalar(value) for value in result.sector_share_series.index.tolist()]
+
+    c_t = result.smoothed_states["c_t"].to_numpy()
+    mu_t = result.smoothed_states["mu_t"].to_numpy()
+
+    # Lambda loadings come from the measurement (Z) matrix: Z[sector_row, c_t_col]
+    state_names = list(result.matrices.state_names)
+    c_idx = state_names.index("c_t")
+    mnames = list(result.matrices.measurement_names)
+    Z = result.matrices.measurement
+
+    observed: dict[str, list] = {}
+    trend: dict[str, list] = {}
+    cycle_sector: dict[str, list] = {}
+
+    for sector_name in sector_names:
+        m_row = mnames.index(sector_name)
+        lambda_i = float(Z[m_row, c_idx])
+        theta_i = result.smoothed_states[f"theta_{sector_name}"].to_numpy()
+        # observed: raw log×100 input data → divide by 100 for decimal log level
+        # NaN entries (missing observations) become null via _make_serializable
+        obs_raw = result.observed_data[sector_name].to_numpy(dtype=float)
+        observed[sector_name] = (obs_raw / 100.0).tolist()
+        trend[sector_name] = ((mu_t + theta_i) / 100.0).tolist()
+        cycle_sector[sector_name] = (lambda_i * c_t / 100.0).tolist()
+
     payload = {
         "last_updated": _normalize_timestamp(last_updated),
         "scenario": scenario_name,
         "dates": dates,
         "sector_names": sector_names,
+        # Aggregate cycle (output gap) once at top level; frontend overlays per sector
+        "cycle_agg": (c_t / 100.0).tolist(),
         "shares": {
             sector_name: result.sector_share_series[sector_name].tolist()
             for sector_name in sector_names
@@ -230,6 +257,9 @@ def build_sectors_payload(
             sector_name: result.smoothed_states[f"theta_{sector_name}"].tolist()
             for sector_name in sector_names
         },
+        "observed": observed,
+        "trend": trend,
+        "cycle_sector": cycle_sector,
     }
     if include_legacy_aliases:
         payload["scenario_name"] = scenario_name

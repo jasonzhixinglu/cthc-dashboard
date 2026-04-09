@@ -79,15 +79,17 @@ function clipSectorsFrom(sectors: SectorsPayload, startDate: string): SectorsPay
   const idx = sectors.dates.findIndex((d) => d >= startDate)
   if (idx <= 0) return sectors
   const sl = <T>(arr: T[]): T[] => arr.slice(idx)
+  const slMap = (map: Record<string, unknown[]> | undefined) =>
+    map ? Object.fromEntries(Object.entries(map).map(([k, v]) => [k, sl(v)])) : undefined
   return {
     ...sectors,
     dates: sl(sectors.dates),
-    shares: Object.fromEntries(
-      Object.entries(sectors.shares).map(([k, v]) => [k, sl(v)])
-    ),
-    theta: Object.fromEntries(
-      Object.entries(sectors.theta).map(([k, v]) => [k, sl(v)])
-    ),
+    shares: Object.fromEntries(Object.entries(sectors.shares).map(([k, v]) => [k, sl(v)])),
+    theta: Object.fromEntries(Object.entries(sectors.theta).map(([k, v]) => [k, sl(v)])),
+    cycle_agg: sectors.cycle_agg ? sl(sectors.cycle_agg) : undefined,
+    observed: slMap(sectors.observed) as Record<string, Array<number | null>> | undefined,
+    trend: slMap(sectors.trend) as Record<string, number[]> | undefined,
+    cycle_sector: slMap(sectors.cycle_sector) as Record<string, number[]> | undefined,
   }
 }
 
@@ -118,15 +120,17 @@ function clipSectorsTo(sectors: SectorsPayload, endDate: string): SectorsPayload
   const idx = sectors.dates.findLastIndex((d) => d <= endDate)
   if (idx < 0 || idx === sectors.dates.length - 1) return sectors
   const sl = <T>(arr: T[]): T[] => arr.slice(0, idx + 1)
+  const slMap = (map: Record<string, unknown[]> | undefined) =>
+    map ? Object.fromEntries(Object.entries(map).map(([k, v]) => [k, sl(v)])) : undefined
   return {
     ...sectors,
     dates: sl(sectors.dates),
-    shares: Object.fromEntries(
-      Object.entries(sectors.shares).map(([k, v]) => [k, sl(v)])
-    ),
-    theta: Object.fromEntries(
-      Object.entries(sectors.theta).map(([k, v]) => [k, sl(v)])
-    ),
+    shares: Object.fromEntries(Object.entries(sectors.shares).map(([k, v]) => [k, sl(v)])),
+    theta: Object.fromEntries(Object.entries(sectors.theta).map(([k, v]) => [k, sl(v)])),
+    cycle_agg: sectors.cycle_agg ? sl(sectors.cycle_agg) : undefined,
+    observed: slMap(sectors.observed) as Record<string, Array<number | null>> | undefined,
+    trend: slMap(sectors.trend) as Record<string, number[]> | undefined,
+    cycle_sector: slMap(sectors.cycle_sector) as Record<string, number[]> | undefined,
   }
 }
 
@@ -180,6 +184,15 @@ function normalizeSectors(payload: SectorsPayload): SectorsPayload {
   const canonicalDates = ensureStringArray(readStringArray(payload.dates) ?? [])
   const seriesLength = canonicalDates.length
 
+  const optNumberMap = (raw: unknown): Record<string, number[]> | undefined => {
+    const m = asNumberArrayMap(raw, sectorNames)
+    return m ? ensureSeriesMap(m, sectorNames, seriesLength) : undefined
+  }
+  const optNullableMap = (raw: unknown): Record<string, Array<number | null>> | undefined => {
+    const m = asNullableNumberArrayMap(raw, sectorNames)
+    return m ? ensureNullableSeriesMap(m, sectorNames, seriesLength) : undefined
+  }
+
   return {
     last_updated: readString(payload.last_updated) ?? 'Unavailable',
     scenario: readString(payload.scenario) ?? 'baseline',
@@ -198,6 +211,12 @@ function normalizeSectors(payload: SectorsPayload): SectorsPayload {
       sectorNames,
       seriesLength,
     ),
+    cycle_agg: payload.cycle_agg
+      ? ensureNumberArray(readNumberArray(payload.cycle_agg) ?? [], seriesLength)
+      : undefined,
+    observed: optNullableMap(payload.observed),
+    trend: optNumberMap(payload.trend),
+    cycle_sector: optNumberMap(payload.cycle_sector),
   }
 }
 
@@ -237,6 +256,29 @@ function asNumberArrayMap(
   const record = value as Record<string, unknown>
   return Object.fromEntries(
     keys.map((key) => [key, readNumberArray(record[key]) ?? []]),
+  )
+}
+
+function asNullableNumberArrayMap(
+  value: unknown,
+  keys: string[],
+): Record<string, Array<number | null>> | null {
+  if (value === null || typeof value !== 'object') {
+    return null
+  }
+  const record = value as Record<string, unknown>
+  return Object.fromEntries(
+    keys.map((key) => [key, readNullableNumberArray(record[key]) ?? []]),
+  )
+}
+
+function ensureNullableSeriesMap(
+  values: Record<string, Array<number | null>>,
+  keys: string[],
+  length: number,
+): Record<string, Array<number | null>> {
+  return Object.fromEntries(
+    keys.map((key) => [key, ensureNullableNumberArray(values[key] ?? [], length)]),
   )
 }
 
