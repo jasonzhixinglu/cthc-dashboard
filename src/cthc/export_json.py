@@ -134,7 +134,7 @@ def build_summary_payload(
         ),
         "latest_potential_growth": (
             None if latest_index is None
-            else result.potential_growth_series.iloc[-1] / 100.0 * 400.0
+            else result.potential_growth_series.iloc[-1] / 25.0
         ),
         "sample_end": _serialize_scalar(latest_index),
     }
@@ -156,18 +156,22 @@ def build_series_payload(
     """Build time-series payloads for the frontend."""
     dates = [_serialize_scalar(value) for value in result.smoothed_states.index.tolist()]
 
-    # c_t is in log×100 units; divide by 100 to get natural-log deviations
-    # (≈ percentage-point output gap, e.g. −2.5 log×100 → −0.025 ≈ −2.5 %)
+    # All series are stored as decimal fractions so the frontend ×100 formatter
+    # works uniformly for both output_gap and potential_growth.
+    #
+    # c_t (log×100) → divide by 100 → decimal fraction
+    #   e.g. −2.5 log×100 → −0.025  (frontend shows −2.5 %)
     output_gap_scaled = result.output_gap_series.to_numpy() / 100.0
-    # g_t is a quarterly log×100 growth rate; convert to annualised percent
-    # g_t / 100 * 400 = g_t * 4  (e.g. 1.3 log×100/quarter → 5.2 % p.a.)
-    potential_growth_scaled = result.potential_growth_series.to_numpy() / 100.0 * 400.0
-    # mu_t (trend level) is in log×100; divide by 100 to match observed GDP scale
+    # g_t (log×100/quarter) → annualised → decimal fraction
+    #   g_t / 100 * 4 (quarterly→annual) / 100 (log×100→fraction) = g_t / 2500
+    #   e.g. 1.3 log×100/quarter → 0.052  (frontend shows 5.2 % p.a.)
+    potential_growth_scaled = result.potential_growth_series.to_numpy() / 25.0
+    # mu_t (log×100) → divide by 100 to match observed GDP nat-log scale
     gdp_trend_scaled = result.smoothed_states["mu_t"].to_numpy() / 100.0
 
     gap_bands = _posterior_bands(result, "c_t", output_gap_scaled, scale=1.0 / 100.0)
     growth_bands = _posterior_bands(
-        result, "g_t", potential_growth_scaled, scale=400.0 / 100.0
+        result, "g_t", potential_growth_scaled, scale=1.0 / 25.0
     )
 
     payload = {
