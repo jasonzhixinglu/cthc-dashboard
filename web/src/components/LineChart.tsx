@@ -14,11 +14,12 @@ type ChartSeries = {
 type LineChartProps = {
   labels: string[]
   series: ChartSeries[]
+  sourceNote?: string
 }
 
-const WIDTH = 760
+const WIDTH = 860
 const HEIGHT = 260
-const PAD = { top: 12, right: 16, bottom: 8, left: 52 }
+const PAD = { top: 14, right: 16, bottom: 20, left: 56 }
 
 const innerW = WIDTH - PAD.left - PAD.right
 const innerH = HEIGHT - PAD.top - PAD.bottom
@@ -34,7 +35,7 @@ function niceTickStep(range: number, n: number): number {
   return mag * 10
 }
 
-export function LineChart({ labels, series }: LineChartProps) {
+export function LineChart({ labels, series, sourceNote }: LineChartProps) {
   const allValues = [
     ...series.flatMap((item) => item.values),
     ...series.flatMap((item) => item.band95?.lower ?? []),
@@ -48,13 +49,11 @@ export function LineChart({ labels, series }: LineChartProps) {
   const dataMin = Math.min(...allValues)
   const dataMax = Math.max(...allValues)
 
-  // Compute nice axis bounds
   const step = niceTickStep(dataMax - dataMin || 1, N_TICKS)
   const axisMin = Math.floor(dataMin / step) * step
   const axisMax = Math.ceil(dataMax / step) * step
   const axisRange = axisMax - axisMin || 1
 
-  // Generate tick values
   const ticks: number[] = []
   for (let t = axisMin; t <= axisMax + step * 0.001; t += step) {
     ticks.push(parseFloat(t.toFixed(10)))
@@ -70,9 +69,9 @@ export function LineChart({ labels, series }: LineChartProps) {
     return PAD.top + innerH - ((value - axisMin) / axisRange) * innerH
   }
 
-  function formatTick(value: number) {
-    const pct = value * 100
-    return `${pct >= 0 && value !== axisMin ? '+' : ''}${pct.toFixed(1)}%`
+  // Integer percent label, no sign prefix, no decimal
+  function formatTick(value: number): string {
+    return String(Math.round(value * 100))
   }
 
   function buildLinePath(values: number[]) {
@@ -102,7 +101,7 @@ export function LineChart({ labels, series }: LineChartProps) {
     return `${forward} ${backward} Z`
   }
 
-  // X-axis label positions: first, last, and ~3 intermediate
+  // X-axis: first, last, and up to 3 evenly-spaced intermediate labels
   const labelIndices = new Set<number>([0, labels.length - 1])
   const step4 = Math.floor((labels.length - 1) / 4)
   for (let i = 1; i <= 3; i++) {
@@ -111,13 +110,30 @@ export function LineChart({ labels, series }: LineChartProps) {
   }
 
   const zeroInRange = axisMin <= 0 && axisMax >= 0
+  const centerY = PAD.top + innerH / 2
+
+  const defaultSource =
+    'Source: Authors\u2019 calculations. Shaded bands show 68% and 95% posterior credible intervals.'
 
   return (
     <div className="chart-shell">
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} className="chart-svg" role="img">
         <rect x="0" y="0" width={WIDTH} height={HEIGHT} className="chart-frame" />
 
-        {/* Horizontal grid lines + Y-axis labels */}
+        {/* "Percent" rotated Y-axis label */}
+        <text
+          x={10}
+          y={centerY}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="10"
+          fill="#9a9a9a"
+          transform={`rotate(-90, 10, ${centerY})`}
+        >
+          Percent
+        </text>
+
+        {/* Horizontal grid lines + Y-axis tick labels */}
         {ticks.map((tick) => {
           const y = toY(tick)
           if (y < PAD.top - 4 || y > PAD.top + innerH + 4) return null
@@ -129,9 +145,10 @@ export function LineChart({ labels, series }: LineChartProps) {
                 x2={PAD.left + innerW}
                 y2={y}
                 className="chart-grid"
+                strokeDasharray="2,3"
               />
               <text
-                x={PAD.left - 6}
+                x={PAD.left - 5}
                 y={y}
                 textAnchor="end"
                 dominantBaseline="middle"
@@ -155,7 +172,7 @@ export function LineChart({ labels, series }: LineChartProps) {
           />
         ) : null}
 
-        {/* Series bands and lines */}
+        {/* Bands and lines */}
         {series.map((item) => (
           <g key={item.name}>
             {item.band95 ? (
@@ -209,6 +226,9 @@ export function LineChart({ labels, series }: LineChartProps) {
           </span>
         ))}
       </div>
+
+      {/* Source note */}
+      <p className="chart-source">{sourceNote ?? defaultSource}</p>
     </div>
   )
 }

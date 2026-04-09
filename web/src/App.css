@@ -141,7 +141,7 @@
 /* ── Panels ─────────────────────────────────────────────────── */
 
 .panel {
-  padding: 1.75rem 0;
+  padding: 1.25rem 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -150,7 +150,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.65rem;
 }
 
 .panel-body {
@@ -183,6 +183,7 @@
 .chart-shell {
   display: grid;
   gap: 0.5rem;
+  max-width: 860px;
 }
 
 .chart-svg {
@@ -229,19 +230,19 @@
   flex-shrink: 0;
 }
 
-.chart-axis {
-  display: flex;
-  justify-content: space-between;
-  color: var(--muted);
-  font-size: 0.78rem;
-  padding: 0 0 0 3.2rem;
-}
 
 .chart-empty {
   padding: 2rem;
   border: 1px dashed var(--border);
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.chart-source {
+  font-size: 11px;
+  color: #888888;
+  line-height: 1.4;
+  margin: 0;
 }
 
 /* ── Selector ───────────────────────────────────────────────── */
