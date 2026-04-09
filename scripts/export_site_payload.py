@@ -37,11 +37,16 @@ def main() -> None:
     data = pd.read_csv(args.input_csv)
     data["date"] = data["date"].str.replace(r"(\d{4})Q(\d)", r"\1-Q\2", regex=True)
     data = data.set_index("date")
+
+    gdp_valid = data["gdp"].dropna() if "gdp" in data.columns else pd.Series(dtype=float)
+    display_end = str(gdp_valid.index[-1]) if not gdp_valid.empty else None
+
     result = run_fixed_parameter_model(data, config_path=args.config)
     written_files = export_site_payload(
         result,
         output_dir=args.output_dir,
         scenario_name=args.scenario,
+        display_end=display_end,
     )
 
     for filename, path in sorted(written_files.items()):

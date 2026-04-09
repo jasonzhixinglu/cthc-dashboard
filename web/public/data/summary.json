@@ -1,8 +1,9 @@
 {
+  "display_end": "2025-Q4",
   "display_start": "2005-Q1",
   "last_updated": "2026-04-09",
-  "latest_output_gap": 0.001962127931305545,
-  "latest_potential_growth": -0.02291989088100211,
+  "latest_output_gap": -0.11305765028640341,
+  "latest_potential_growth": -0.09242895795421621,
   "sample_end": "2026-Q1",
   "scenario": "baseline"
 }

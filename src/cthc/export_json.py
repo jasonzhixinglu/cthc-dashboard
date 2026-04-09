@@ -72,6 +72,7 @@ def export_site_payload(
     output_dir: str | Path = Path("web/public/data"),
     scenario_name: str = "baseline",
     last_updated: str | None = None,
+    display_end: str | None = None,
     include_legacy_aliases: bool = False,
 ) -> dict[str, Path]:
     """Write frontend-ready JSON payload files into the public data directory."""
@@ -84,6 +85,7 @@ def export_site_payload(
             result,
             scenario_name=scenario_name,
             last_updated=resolved_timestamp,
+            display_end=display_end,
             include_legacy_aliases=include_legacy_aliases,
         ),
         "series.json": build_series_payload(
@@ -116,6 +118,7 @@ def build_summary_payload(
     *,
     scenario_name: str,
     last_updated: str,
+    display_end: str | None = None,
     include_legacy_aliases: bool = False,
 ) -> dict[str, object]:
     """Build summary metrics for the frontend."""
@@ -124,6 +127,7 @@ def build_summary_payload(
         "last_updated": _normalize_timestamp(last_updated),
         "scenario": scenario_name,
         "display_start": "2005-Q1",
+        "display_end": display_end,
         "latest_output_gap": (
             None if latest_index is None else result.output_gap_series.iloc[-1]
         ),

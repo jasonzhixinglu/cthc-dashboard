@@ -10,6 +10,7 @@ export async function loadDashboardData(): Promise<DashboardData> {
 
   const normalizedSummary = normalizeSummary(summary)
   const displayStart = normalizedSummary.display_start
+  const displayEnd = normalizedSummary.display_end
 
   let normalizedSeries = normalizeSeries(series)
   let normalizedSectors = normalizeSectors(sectors)
@@ -17,6 +18,11 @@ export async function loadDashboardData(): Promise<DashboardData> {
   if (displayStart) {
     normalizedSeries = clipSeriesFrom(normalizedSeries, displayStart)
     normalizedSectors = clipSectorsFrom(normalizedSectors, displayStart)
+  }
+
+  if (displayEnd) {
+    normalizedSeries = clipSeriesTo(normalizedSeries, displayEnd)
+    normalizedSectors = clipSectorsTo(normalizedSectors, displayEnd)
   }
 
   return {
@@ -39,6 +45,7 @@ function normalizeSummary(payload: SummaryPayload): SummaryPayload {
     last_updated: readString(payload.last_updated) ?? 'Unavailable',
     scenario: readString(payload.scenario) ?? 'baseline',
     display_start: readString(payload.display_start) ?? undefined,
+    display_end: readString(payload.display_end) ?? undefined,
     latest_output_gap: readNumber(payload.latest_output_gap),
     latest_potential_growth: readNumber(payload.latest_potential_growth),
     sample_end: readString(payload.sample_end) ?? null,
@@ -72,6 +79,45 @@ function clipSectorsFrom(sectors: SectorsPayload, startDate: string): SectorsPay
   const idx = sectors.dates.findIndex((d) => d >= startDate)
   if (idx <= 0) return sectors
   const sl = <T>(arr: T[]): T[] => arr.slice(idx)
+  return {
+    ...sectors,
+    dates: sl(sectors.dates),
+    shares: Object.fromEntries(
+      Object.entries(sectors.shares).map(([k, v]) => [k, sl(v)])
+    ),
+    theta: Object.fromEntries(
+      Object.entries(sectors.theta).map(([k, v]) => [k, sl(v)])
+    ),
+  }
+}
+
+function clipSeriesTo(series: SeriesPayload, endDate: string): SeriesPayload {
+  const idx = series.dates.findLastIndex((d) => d <= endDate)
+  if (idx < 0 || idx === series.dates.length - 1) return series
+  const sl = <T>(arr: T[]): T[] => arr.slice(0, idx + 1)
+  const slOpt = <T>(arr: T[] | undefined): T[] | undefined => arr ? arr.slice(0, idx + 1) : undefined
+  return {
+    ...series,
+    dates: sl(series.dates),
+    output_gap: sl(series.output_gap),
+    output_gap_p16: slOpt(series.output_gap_p16),
+    output_gap_p84: slOpt(series.output_gap_p84),
+    output_gap_p025: slOpt(series.output_gap_p025),
+    output_gap_p975: slOpt(series.output_gap_p975),
+    potential_growth: sl(series.potential_growth),
+    potential_growth_p16: slOpt(series.potential_growth_p16),
+    potential_growth_p84: slOpt(series.potential_growth_p84),
+    potential_growth_p025: slOpt(series.potential_growth_p025),
+    potential_growth_p975: slOpt(series.potential_growth_p975),
+    gdp_observed: sl(series.gdp_observed),
+    gdp_trend: sl(series.gdp_trend),
+  }
+}
+
+function clipSectorsTo(sectors: SectorsPayload, endDate: string): SectorsPayload {
+  const idx = sectors.dates.findLastIndex((d) => d <= endDate)
+  if (idx < 0 || idx === sectors.dates.length - 1) return sectors
+  const sl = <T>(arr: T[]): T[] => arr.slice(0, idx + 1)
   return {
     ...sectors,
     dates: sl(sectors.dates),

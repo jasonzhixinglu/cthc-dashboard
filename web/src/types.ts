@@ -2,6 +2,7 @@ export interface SummaryPayload {
   last_updated: string
   scenario: string
   display_start?: string
+  display_end?: string
   latest_output_gap: number | null
   latest_potential_growth: number | null
   sample_end: string | null
