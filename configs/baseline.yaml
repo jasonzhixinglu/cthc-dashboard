@@ -10,8 +10,8 @@ cycle:
 
 measurement:
   sigma_eps_star: 0.872
-  sigma_tau: 2.015
-  sigma_psi: 2.033
+  sigma_tau: 3.054
+  sigma_psi: 3.080
 
 loadings:
   imports: 2.560

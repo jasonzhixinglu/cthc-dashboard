@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -48,6 +49,20 @@ def run_fixed_parameter_model(
     config = load_config(config_path)
     matrices = build_model_matrices(config)
     observations = _extract_observations(data, matrices.measurement_names)
+
+    # Data must be in log×100 units to match parameter calibration in baseline.yaml
+    # (e.g. first GDP value ~895, sector values ~400-1060).
+    # If your source data is in natural-log units, multiply each column by 100
+    # before passing it to this function.
+    initial_mean, initial_covariance = _derive_initial_conditions(
+        observations, matrices, config
+    )
+    matrices = dataclasses.replace(
+        matrices,
+        initial_mean=initial_mean,
+        initial_covariance=initial_covariance,
+    )
+
     filter_result = run_kalman_filter(observations, matrices)
     smoother_result = run_rts_smoother(filter_result, matrices)
 
@@ -92,6 +107,60 @@ def run_fixed_parameter_model(
         potential_growth_series=potential_growth_series,
         sector_share_series=sector_share_series,
     )
+
+
+def _derive_initial_conditions(
+    observations: np.ndarray,
+    matrices: ModelMatrices,
+    config: CTHCConfig,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Derive data-driven initial state mean and covariance from rescaled observations.
+
+    Mirrors the reference ``est_initial_conditions`` logic: mu_0 is set to the
+    first non-NaN GDP level, g_0 to the mean quarterly growth over the first 8
+    non-NaN GDP observations, theta_i_0 to the first non-NaN sector level minus
+    mu_0, and P_0 is diffuse for all states.
+    """
+    n_state = matrices.state_dimension
+    sector_count = n_state - 4
+
+    # GDP is the first measurement column
+    gdp_obs = observations[:, 0]
+    gdp_valid = gdp_obs[~np.isnan(gdp_obs)]
+
+    mu_0 = float(gdp_valid[0]) if len(gdp_valid) > 0 else 0.0
+    n_growth = min(8, len(gdp_valid))
+    g_0 = (
+        float(np.mean(np.diff(gdp_valid[:n_growth])))
+        if n_growth >= 2
+        else float(config.trend.d)
+    )
+
+    initial_mean = np.zeros(n_state, dtype=np.float64)
+    initial_mean[0] = mu_0   # mu_t: first observed GDP level
+    initial_mean[1] = g_0    # g_t: mean quarterly growth rate
+    # initial_mean[2] = 0.0  # c_t (cycle starts at zero)
+    # initial_mean[3] = 0.0  # c*_t (auxiliary cycle starts at zero)
+    for i in range(sector_count):
+        sector_obs = observations[:, 1 + i]
+        sector_valid = sector_obs[~np.isnan(sector_obs)]
+        if len(sector_valid) > 0:
+            initial_mean[4 + i] = float(sector_valid[0]) - mu_0
+
+    rho_c = float(config.cycle.rho_c)
+    sigma_omega = float(config.cycle.sigma_omega)
+    sigma_psi = float(config.measurement.sigma_psi)
+    sigma_u = float(config.trend.sigma_u)
+
+    initial_covariance = np.zeros((n_state, n_state), dtype=np.float64)
+    initial_covariance[0, 0] = 1e6                                        # mu_t: diffuse
+    initial_covariance[1, 1] = sigma_u ** 2                               # g_t
+    initial_covariance[2, 2] = sigma_omega ** 2 / (1.0 - rho_c ** 2)     # c_t: stationary
+    initial_covariance[3, 3] = sigma_omega ** 2 / (1.0 - rho_c ** 2)     # c*_t: stationary
+    for i in range(sector_count):
+        initial_covariance[4 + i, 4 + i] = sigma_psi ** 2 * 100.0        # theta_i: diffuse
+
+    return initial_mean, initial_covariance
 
 
 def _extract_observations(

@@ -129,10 +129,12 @@ def build_summary_payload(
         "display_start": "2005-Q1",
         "display_end": display_end,
         "latest_output_gap": (
-            None if latest_index is None else result.output_gap_series.iloc[-1]
+            None if latest_index is None
+            else result.output_gap_series.iloc[-1] / 100.0
         ),
         "latest_potential_growth": (
-            None if latest_index is None else result.potential_growth_series.iloc[-1]
+            None if latest_index is None
+            else result.potential_growth_series.iloc[-1] / 100.0 * 400.0
         ),
         "sample_end": _serialize_scalar(latest_index),
     }
@@ -154,25 +156,36 @@ def build_series_payload(
     """Build time-series payloads for the frontend."""
     dates = [_serialize_scalar(value) for value in result.smoothed_states.index.tolist()]
 
-    gap_bands = _posterior_bands(result, "c_t", result.output_gap_series.to_numpy())
-    growth_bands = _posterior_bands(result, "g_t", result.potential_growth_series.to_numpy())
+    # c_t is in log×100 units; divide by 100 to get natural-log deviations
+    # (≈ percentage-point output gap, e.g. −2.5 log×100 → −0.025 ≈ −2.5 %)
+    output_gap_scaled = result.output_gap_series.to_numpy() / 100.0
+    # g_t is a quarterly log×100 growth rate; convert to annualised percent
+    # g_t / 100 * 400 = g_t * 4  (e.g. 1.3 log×100/quarter → 5.2 % p.a.)
+    potential_growth_scaled = result.potential_growth_series.to_numpy() / 100.0 * 400.0
+    # mu_t (trend level) is in log×100; divide by 100 to match observed GDP scale
+    gdp_trend_scaled = result.smoothed_states["mu_t"].to_numpy() / 100.0
+
+    gap_bands = _posterior_bands(result, "c_t", output_gap_scaled, scale=1.0 / 100.0)
+    growth_bands = _posterior_bands(
+        result, "g_t", potential_growth_scaled, scale=400.0 / 100.0
+    )
 
     payload = {
         "last_updated": _normalize_timestamp(last_updated),
         "scenario": scenario_name,
         "dates": dates,
-        "output_gap": result.output_gap_series.tolist(),
+        "output_gap": output_gap_scaled.tolist(),
         "output_gap_p16": gap_bands["p16"],
         "output_gap_p84": gap_bands["p84"],
         "output_gap_p025": gap_bands["p025"],
         "output_gap_p975": gap_bands["p975"],
-        "potential_growth": result.potential_growth_series.tolist(),
+        "potential_growth": potential_growth_scaled.tolist(),
         "potential_growth_p16": growth_bands["p16"],
         "potential_growth_p84": growth_bands["p84"],
         "potential_growth_p025": growth_bands["p025"],
         "potential_growth_p975": growth_bands["p975"],
         "gdp_observed": result.observed_data["gdp"].tolist(),
-        "gdp_trend": result.smoothed_states["mu_t"].tolist(),
+        "gdp_trend": gdp_trend_scaled.tolist(),
     }
     if include_legacy_aliases:
         payload["scenario_name"] = scenario_name
@@ -232,6 +245,8 @@ def _posterior_bands(
     result: "ModelRunResult",
     state_name: str,
     mean: "np.ndarray",
+    *,
+    scale: float = 1.0,
 ) -> dict[str, list]:
     """Return ±1σ and ±2σ posterior bands for a named state.
 
@@ -246,7 +261,7 @@ def _posterior_bands(
 
     idx = state_names.index(state_name)
     variances = result.smoother_result.smoothed_covariances[:, idx, idx]
-    std = np.sqrt(np.maximum(variances, 0.0))
+    std = np.sqrt(np.maximum(variances, 0.0)) * scale
 
     return {
         "p16": (mean - std).tolist(),
