@@ -25,7 +25,7 @@ function App() {
     let active = true
 
     loadDashboardData()
-      .then((payload) => {
+      .then((payload: DashboardData) => {
         if (!active) {
           return
         }
