@@ -8,10 +8,21 @@ export async function loadDashboardData(): Promise<DashboardData> {
     loadJson<SectorsPayload>(`${base}data/sectors.json`),
   ])
 
+  const normalizedSummary = normalizeSummary(summary)
+  const displayStart = normalizedSummary.display_start
+
+  let normalizedSeries = normalizeSeries(series)
+  let normalizedSectors = normalizeSectors(sectors)
+
+  if (displayStart) {
+    normalizedSeries = clipSeriesFrom(normalizedSeries, displayStart)
+    normalizedSectors = clipSectorsFrom(normalizedSectors, displayStart)
+  }
+
   return {
-    summary: normalizeSummary(summary),
-    series: normalizeSeries(series),
-    sectors: normalizeSectors(sectors),
+    summary: normalizedSummary,
+    series: normalizedSeries,
+    sectors: normalizedSectors,
   }
 }
 
@@ -27,9 +38,49 @@ function normalizeSummary(payload: SummaryPayload): SummaryPayload {
   return {
     last_updated: readString(payload.last_updated) ?? 'Unavailable',
     scenario: readString(payload.scenario) ?? 'baseline',
+    display_start: readString(payload.display_start) ?? undefined,
     latest_output_gap: readNumber(payload.latest_output_gap),
     latest_potential_growth: readNumber(payload.latest_potential_growth),
     sample_end: readString(payload.sample_end) ?? null,
+  }
+}
+
+function clipSeriesFrom(series: SeriesPayload, startDate: string): SeriesPayload {
+  const idx = series.dates.findIndex((d) => d >= startDate)
+  if (idx <= 0) return series
+  const sl = <T>(arr: T[]): T[] => arr.slice(idx)
+  const slOpt = <T>(arr: T[] | undefined): T[] | undefined => arr ? arr.slice(idx) : undefined
+  return {
+    ...series,
+    dates: sl(series.dates),
+    output_gap: sl(series.output_gap),
+    output_gap_p16: slOpt(series.output_gap_p16),
+    output_gap_p84: slOpt(series.output_gap_p84),
+    output_gap_p025: slOpt(series.output_gap_p025),
+    output_gap_p975: slOpt(series.output_gap_p975),
+    potential_growth: sl(series.potential_growth),
+    potential_growth_p16: slOpt(series.potential_growth_p16),
+    potential_growth_p84: slOpt(series.potential_growth_p84),
+    potential_growth_p025: slOpt(series.potential_growth_p025),
+    potential_growth_p975: slOpt(series.potential_growth_p975),
+    gdp_observed: sl(series.gdp_observed),
+    gdp_trend: sl(series.gdp_trend),
+  }
+}
+
+function clipSectorsFrom(sectors: SectorsPayload, startDate: string): SectorsPayload {
+  const idx = sectors.dates.findIndex((d) => d >= startDate)
+  if (idx <= 0) return sectors
+  const sl = <T>(arr: T[]): T[] => arr.slice(idx)
+  return {
+    ...sectors,
+    dates: sl(sectors.dates),
+    shares: Object.fromEntries(
+      Object.entries(sectors.shares).map(([k, v]) => [k, sl(v)])
+    ),
+    theta: Object.fromEntries(
+      Object.entries(sectors.theta).map(([k, v]) => [k, sl(v)])
+    ),
   }
 }
 

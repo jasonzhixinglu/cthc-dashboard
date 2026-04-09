@@ -123,6 +123,7 @@ def build_summary_payload(
     payload = {
         "last_updated": _normalize_timestamp(last_updated),
         "scenario": scenario_name,
+        "display_start": "2005-Q1",
         "latest_output_gap": (
             None if latest_index is None else result.output_gap_series.iloc[-1]
         ),
