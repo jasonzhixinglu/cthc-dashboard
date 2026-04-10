@@ -72,6 +72,8 @@ function clipSeriesFrom(series: SeriesPayload, startDate: string): SeriesPayload
     potential_growth_p975: slOpt(series.potential_growth_p975),
     gdp_observed: sl(series.gdp_observed),
     gdp_trend: sl(series.gdp_trend),
+    gdp_growth_qoq: slOpt(series.gdp_growth_qoq),
+    gdp_growth_yoy: slOpt(series.gdp_growth_yoy),
   }
 }
 
@@ -113,6 +115,8 @@ function clipSeriesTo(series: SeriesPayload, endDate: string): SeriesPayload {
     potential_growth_p975: slOpt(series.potential_growth_p975),
     gdp_observed: sl(series.gdp_observed),
     gdp_trend: sl(series.gdp_trend),
+    gdp_growth_qoq: slOpt(series.gdp_growth_qoq),
+    gdp_growth_yoy: slOpt(series.gdp_growth_yoy),
   }
 }
 
@@ -141,6 +145,11 @@ function normalizeSeries(payload: SeriesPayload): SeriesPayload {
   function optionalBand(raw: number[] | undefined): number[] | undefined {
     if (!raw) return undefined
     return ensureNumberArray(readNumberArray(raw) ?? [], seriesLength)
+  }
+
+  function optionalNullableBand(raw: Array<number | null> | undefined): Array<number | null> | undefined {
+    if (!raw) return undefined
+    return ensureNullableNumberArray(readNullableNumberArray(raw) ?? [], seriesLength)
   }
 
   return {
@@ -176,6 +185,8 @@ function normalizeSeries(payload: SeriesPayload): SeriesPayload {
         readNumberArray(payload.gdp_trend) ?? [],
         seriesLength,
       ),
+    gdp_growth_qoq: optionalNullableBand(payload.gdp_growth_qoq),
+    gdp_growth_yoy: optionalNullableBand(payload.gdp_growth_yoy),
   }
 }
 

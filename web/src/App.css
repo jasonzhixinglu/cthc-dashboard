@@ -419,7 +419,13 @@
 
 .sidebar-stats {
   display: grid;
-  gap: 1.25rem;
+  gap: 1rem;
+}
+
+.sidebar-rule {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
 }
 
 .sidebar-stats .metric-value {

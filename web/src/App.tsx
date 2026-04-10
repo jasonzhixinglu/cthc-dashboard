@@ -197,10 +197,23 @@ function App() {
                       value={formatPercent(data.summary.latest_output_gap)}
                       note={`Sample end ${data.summary.sample_end ?? 'n/a'}`}
                     />
+                    <hr className="sidebar-rule" />
                     <MetricCard
                       label="Latest Potential Growth"
                       value={formatPercent(data.summary.latest_potential_growth)}
                       note="CTHC model estimate"
+                    />
+                    <hr className="sidebar-rule" />
+                    <MetricCard
+                      label="Latest GDP Growth (QoQ ann.)"
+                      value={formatGrowthRate(lastNonNull(data.series.gdp_growth_qoq, data.series.dates)?.value ?? null)}
+                      note={lastNonNull(data.series.gdp_growth_qoq, data.series.dates)?.date ?? 'n/a'}
+                    />
+                    <hr className="sidebar-rule" />
+                    <MetricCard
+                      label="Latest GDP Growth (YoY)"
+                      value={formatGrowthRate(lastNonNull(data.series.gdp_growth_yoy, data.series.dates)?.value ?? null)}
+                      note={lastNonNull(data.series.gdp_growth_yoy, data.series.dates)?.date ?? 'n/a'}
                     />
                   </div>
                 ) : (
@@ -529,6 +542,28 @@ function formatPercent(value: number | null): string {
   }
   const pct = value * 100
   return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`
+}
+
+// GDP growth values are already in percentage terms (not decimal fractions)
+function formatGrowthRate(value: number | null): string {
+  if (value === null || Number.isNaN(value)) {
+    return 'n/a'
+  }
+  return `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
+}
+
+function lastNonNull(
+  arr: Array<number | null> | undefined,
+  dates?: string[],
+): { value: number; date: string } | null {
+  if (!arr) return null
+  for (let i = arr.length - 1; i >= 0; i--) {
+    const v = arr[i]
+    if (v !== null && Number.isFinite(v)) {
+      return { value: v, date: dates?.[i] ?? '' }
+    }
+  }
+  return null
 }
 
 function formatSectorLabel(value: string): string {
