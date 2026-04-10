@@ -98,6 +98,16 @@
   padding: 2rem 0;
 }
 
+/* Remove bottom border from the last section on each tab so the
+   footer's own border-top is the sole divider before the footer. */
+.page-grid > *:last-child {
+  border-bottom: none;
+}
+
+.overview-charts > *:last-child {
+  border-bottom: none;
+}
+
 /* ── Stat bar (key metrics) ─────────────────────────────────── */
 
 .stat-bar {
