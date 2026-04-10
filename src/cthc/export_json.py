@@ -263,6 +263,10 @@ def build_sectors_payload(
     observed: dict[str, list] = {}
     trend: dict[str, list] = {}
     cycle_sector: dict[str, list] = {}
+    theta_p16: dict[str, list] = {}
+    theta_p84: dict[str, list] = {}
+    theta_p025: dict[str, list] = {}
+    theta_p975: dict[str, list] = {}
 
     for sector_name in sector_names:
         m_row = mnames.index(sector_name)
@@ -274,6 +278,14 @@ def build_sectors_payload(
         observed[sector_name] = (obs_raw / 100.0).tolist()
         trend[sector_name] = ((mu_t + theta_i) / 100.0).tolist()
         cycle_sector[sector_name] = (lambda_i * c_t / 100.0).tolist()
+        # theta credible bands: posterior std at ÷100 scale (nat-log deviation)
+        bands = _posterior_bands(
+            result, f"theta_{sector_name}", theta_i / 100.0, scale=1.0 / 100.0
+        )
+        theta_p16[sector_name] = bands["p16"]
+        theta_p84[sector_name] = bands["p84"]
+        theta_p025[sector_name] = bands["p025"]
+        theta_p975[sector_name] = bands["p975"]
 
     payload = {
         "last_updated": _normalize_timestamp(last_updated),
@@ -290,6 +302,10 @@ def build_sectors_payload(
             sector_name: result.smoothed_states[f"theta_{sector_name}"].tolist()
             for sector_name in sector_names
         },
+        "theta_p16": theta_p16,
+        "theta_p84": theta_p84,
+        "theta_p025": theta_p025,
+        "theta_p975": theta_p975,
         "observed": observed,
         "trend": trend,
         "cycle_sector": cycle_sector,

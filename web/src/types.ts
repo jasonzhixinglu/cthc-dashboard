@@ -40,6 +40,11 @@ export interface SectorsPayload {
   observed?: Record<string, Array<number | null>>
   trend?: Record<string, number[]>
   cycle_sector?: Record<string, number[]>
+  // Per-sector theta credible bands (÷100 scale, matching trend/cycle)
+  theta_p16?: Record<string, number[]>
+  theta_p84?: Record<string, number[]>
+  theta_p025?: Record<string, number[]>
+  theta_p975?: Record<string, number[]>
 }
 
 export interface DashboardData {

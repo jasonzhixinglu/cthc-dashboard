@@ -14,6 +14,11 @@ type SectorDecompositionChartProps = {
   sectorName: string
   observed?: Array<number | null>
   trend?: number[]
+  theta?: number[]
+  thetaP16?: number[]
+  thetaP84?: number[]
+  thetaP025?: number[]
+  thetaP975?: number[]
   cycleSector?: number[]
   cycleAgg?: number[]
 }
@@ -23,6 +28,11 @@ export function SectorDecompositionChart({
   sectorName,
   observed,
   trend,
+  theta,
+  thetaP16,
+  thetaP84,
+  thetaP025,
+  thetaP975,
   cycleSector,
   cycleAgg,
 }: SectorDecompositionChartProps) {
@@ -45,6 +55,26 @@ export function SectorDecompositionChart({
       color: '#1a5276',
     })
   }
+
+  // Chart 2: theta_it (sector drift) — stored at log×100 scale, divide by 100 for display
+  const thetaValues = theta ? theta.map((v) => v / 100) : undefined
+  const driftSeries = thetaValues
+    ? [
+        {
+          name: `${label}: θᵢ`,
+          values: thetaValues,
+          color: sectorColor,
+          band68:
+            thetaP16 && thetaP84
+              ? { lower: thetaP16, upper: thetaP84 }
+              : undefined,
+          band95:
+            thetaP025 && thetaP975
+              ? { lower: thetaP025, upper: thetaP975 }
+              : undefined,
+        },
+      ]
+    : []
 
   const cycleSeries = []
   if (cycleAgg) {
@@ -72,6 +102,15 @@ export function SectorDecompositionChart({
           yAxisLabel="Log level"
           yFormatter={(v) => v.toFixed(2)}
           sourceNote="Source: Authors' calculations. Trend = μt + θi (aggregate trend + sector drift)."
+        />
+      ) : null}
+      {driftSeries.length > 0 ? (
+        <LineChart
+          labels={labels}
+          series={driftSeries}
+          yAxisLabel="Log level deviation"
+          yFormatter={(v) => v.toFixed(2)}
+          sourceNote={`Sector-specific trend deviation from aggregate potential (θᵢₜ). Bands show 68% and 95% posterior credible intervals.`}
         />
       ) : null}
       {cycleSeries.length > 0 ? (

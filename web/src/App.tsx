@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { LineChart } from './components/LineChart'
-import { MetricCard } from './components/MetricCard'
 import { NavTabs, type PageKey } from './components/NavTabs'
 import { Panel } from './components/Panel'
 import { SectorDecompositionChart } from './components/SectorDecompositionChart'
@@ -69,16 +68,37 @@ function App() {
     return data.sectors.trend?.[selectedSector]
   }, [data, selectedSector])
 
+  const sectorTheta = useMemo(() => {
+    if (!data || !selectedSector) return undefined
+    return data.sectors.theta?.[selectedSector]
+  }, [data, selectedSector])
+
+  const sectorThetaP16 = useMemo(() => {
+    if (!data || !selectedSector) return undefined
+    return data.sectors.theta_p16?.[selectedSector]
+  }, [data, selectedSector])
+
+  const sectorThetaP84 = useMemo(() => {
+    if (!data || !selectedSector) return undefined
+    return data.sectors.theta_p84?.[selectedSector]
+  }, [data, selectedSector])
+
+  const sectorThetaP025 = useMemo(() => {
+    if (!data || !selectedSector) return undefined
+    return data.sectors.theta_p025?.[selectedSector]
+  }, [data, selectedSector])
+
+  const sectorThetaP975 = useMemo(() => {
+    if (!data || !selectedSector) return undefined
+    return data.sectors.theta_p975?.[selectedSector]
+  }, [data, selectedSector])
+
   const sectorCycle = useMemo(() => {
     if (!data || !selectedSector) return undefined
     return data.sectors.cycle_sector?.[selectedSector]
   }, [data, selectedSector])
 
-  const summaryReady = Boolean(
-    data &&
-      (data.summary.latest_output_gap !== null ||
-        data.summary.latest_potential_growth !== null),
-  )
+
   const seriesReady = Boolean(
     data &&
       data.series.dates.length > 0 &&
@@ -189,39 +209,30 @@ function App() {
 
               {/* Right column: sidebar */}
               <aside className="overview-sidebar">
-                {/* Key statistics */}
-                {summaryReady ? (
-                  <div className="sidebar-stats">
-                    <MetricCard
-                      label="Latest Output Gap"
-                      value={formatPercent(data.summary.latest_output_gap)}
-                      note={`Sample end ${data.summary.sample_end ?? 'n/a'}`}
-                    />
-                    <hr className="sidebar-rule" />
-                    <MetricCard
-                      label="Latest Potential Growth"
-                      value={formatPercent(data.summary.latest_potential_growth)}
-                      note="CTHC model estimate"
-                    />
-                    <hr className="sidebar-rule" />
-                    <MetricCard
-                      label="Latest GDP Growth (QoQ ann.)"
-                      value={formatGrowthRate(lastNonNull(data.series.gdp_growth_qoq, data.series.dates)?.value ?? null)}
-                      note={lastNonNull(data.series.gdp_growth_qoq, data.series.dates)?.date ?? 'n/a'}
-                    />
-                    <hr className="sidebar-rule" />
-                    <MetricCard
-                      label="Latest GDP Growth (YoY)"
-                      value={formatGrowthRate(lastNonNull(data.series.gdp_growth_yoy, data.series.dates)?.value ?? null)}
-                      note={lastNonNull(data.series.gdp_growth_yoy, data.series.dates)?.date ?? 'n/a'}
-                    />
+                {/* Compact stats table */}
+                <div className="sidebar-stats">
+                  <p className="sidebar-date-header">
+                    LATEST ESTIMATES &middot; {data.summary.display_end ?? data.summary.sample_end ?? 'n/a'}
+                  </p>
+                  <div className="stat-table">
+                    <div className="stat-row">
+                      <span className="stat-label">Output gap</span>
+                      <span className="stat-value">{formatPercent(data.summary.latest_output_gap)}</span>
+                    </div>
+                    <div className="stat-row">
+                      <span className="stat-label">Potential growth</span>
+                      <span className="stat-value">{formatPercent(data.summary.latest_potential_growth)}</span>
+                    </div>
+                    <div className="stat-row">
+                      <span className="stat-label">GDP growth (QoQar)</span>
+                      <span className="stat-value">{formatGrowthRate(lastNonNull(data.series.gdp_growth_qoq, data.series.dates)?.value ?? null)}</span>
+                    </div>
+                    <div className="stat-row">
+                      <span className="stat-label">GDP growth (YoY)</span>
+                      <span className="stat-value">{formatGrowthRate(lastNonNull(data.series.gdp_growth_yoy, data.series.dates)?.value ?? null)}</span>
+                    </div>
                   </div>
-                ) : (
-                  <EmptyStateCard
-                    title="Summary data missing"
-                    message="`summary.json` does not contain current values yet."
-                  />
-                )}
+                </div>
 
                 {/* Model description */}
                 <ul className="sidebar-bullets">
@@ -258,58 +269,6 @@ function App() {
 
           {page === 'explorer' ? (
             <>
-              <Panel title="Output Gap">
-                {seriesReady ? (
-                  <LineChart
-                    labels={data.series.dates}
-                    series={[
-                      {
-                        name: 'Output Gap',
-                        values: data.series.output_gap,
-                        color: 'var(--series-gap)',
-                        band68: data.series.output_gap_p16 && data.series.output_gap_p84
-                          ? { lower: data.series.output_gap_p16, upper: data.series.output_gap_p84 }
-                          : undefined,
-                        band95: data.series.output_gap_p025 && data.series.output_gap_p975
-                          ? { lower: data.series.output_gap_p025, upper: data.series.output_gap_p975 }
-                          : undefined,
-                      },
-                    ]}
-                  />
-                ) : (
-                  <EmptyStateCard
-                    title="Series data missing"
-                    message="`series.json` does not contain output-gap observations yet."
-                  />
-                )}
-              </Panel>
-
-              <Panel title="Potential Growth">
-                {seriesReady ? (
-                  <LineChart
-                    labels={data.series.dates}
-                    series={[
-                      {
-                        name: 'Potential Growth',
-                        values: data.series.potential_growth,
-                        color: 'var(--series-growth)',
-                        band68: data.series.potential_growth_p16 && data.series.potential_growth_p84
-                          ? { lower: data.series.potential_growth_p16, upper: data.series.potential_growth_p84 }
-                          : undefined,
-                        band95: data.series.potential_growth_p025 && data.series.potential_growth_p975
-                          ? { lower: data.series.potential_growth_p025, upper: data.series.potential_growth_p975 }
-                          : undefined,
-                      },
-                    ]}
-                  />
-                ) : (
-                  <EmptyStateCard
-                    title="Series data missing"
-                    message="`series.json` does not contain potential-growth observations yet."
-                  />
-                )}
-              </Panel>
-
               <Panel title="GDP Growth">
                 {seriesReady && (data.series.gdp_growth_qoq || data.series.gdp_growth_yoy) ? (
                   <LineChart
@@ -364,6 +323,11 @@ function App() {
                     sectorName={selectedSector}
                     observed={sectorObserved}
                     trend={sectorTrend}
+                    theta={sectorTheta}
+                    thetaP16={sectorThetaP16}
+                    thetaP84={sectorThetaP84}
+                    thetaP025={sectorThetaP025}
+                    thetaP975={sectorThetaP975}
                     cycleSector={sectorCycle}
                     cycleAgg={data.sectors.cycle_agg}
                   />

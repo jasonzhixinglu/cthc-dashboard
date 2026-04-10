@@ -92,6 +92,10 @@ function clipSectorsFrom(sectors: SectorsPayload, startDate: string): SectorsPay
     observed: slMap(sectors.observed) as Record<string, Array<number | null>> | undefined,
     trend: slMap(sectors.trend) as Record<string, number[]> | undefined,
     cycle_sector: slMap(sectors.cycle_sector) as Record<string, number[]> | undefined,
+    theta_p16: slMap(sectors.theta_p16) as Record<string, number[]> | undefined,
+    theta_p84: slMap(sectors.theta_p84) as Record<string, number[]> | undefined,
+    theta_p025: slMap(sectors.theta_p025) as Record<string, number[]> | undefined,
+    theta_p975: slMap(sectors.theta_p975) as Record<string, number[]> | undefined,
   }
 }
 
@@ -135,6 +139,10 @@ function clipSectorsTo(sectors: SectorsPayload, endDate: string): SectorsPayload
     observed: slMap(sectors.observed) as Record<string, Array<number | null>> | undefined,
     trend: slMap(sectors.trend) as Record<string, number[]> | undefined,
     cycle_sector: slMap(sectors.cycle_sector) as Record<string, number[]> | undefined,
+    theta_p16: slMap(sectors.theta_p16) as Record<string, number[]> | undefined,
+    theta_p84: slMap(sectors.theta_p84) as Record<string, number[]> | undefined,
+    theta_p025: slMap(sectors.theta_p025) as Record<string, number[]> | undefined,
+    theta_p975: slMap(sectors.theta_p975) as Record<string, number[]> | undefined,
   }
 }
 
@@ -228,6 +236,10 @@ function normalizeSectors(payload: SectorsPayload): SectorsPayload {
     observed: optNullableMap(payload.observed),
     trend: optNumberMap(payload.trend),
     cycle_sector: optNumberMap(payload.cycle_sector),
+    theta_p16: optNumberMap(payload.theta_p16),
+    theta_p84: optNumberMap(payload.theta_p84),
+    theta_p025: optNumberMap(payload.theta_p025),
+    theta_p975: optNumberMap(payload.theta_p975),
   }
 }
 
