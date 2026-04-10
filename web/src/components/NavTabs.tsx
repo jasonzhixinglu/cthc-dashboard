@@ -1,4 +1,4 @@
-export type PageKey = 'overview' | 'explorer' | 'scenarios' | 'methodology'
+export type PageKey = 'overview' | 'explorer' | 'vintages' | 'methodology'
 
 type NavTabsProps = {
   page: PageKey

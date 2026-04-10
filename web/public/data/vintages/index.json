@@ -1,0 +1,10 @@
+{
+  "vintages": [
+    {
+      "data_path": "vintages/2025-02-28/",
+      "id": "2025-02-28",
+      "label": "February 2025",
+      "sample_end": "2024-Q4"
+    }
+  ]
+}

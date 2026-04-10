@@ -4,13 +4,14 @@ import { LineChart } from './components/LineChart'
 import { NavTabs, type PageKey } from './components/NavTabs'
 import { Panel } from './components/Panel'
 import { SectorDecompositionChart } from './components/SectorDecompositionChart'
+import { VintagesTab } from './components/VintagesTab'
 import { loadDashboardData } from './lib/data'
 import type { DashboardData } from './types'
 
 const PAGE_LABELS: Record<PageKey, string> = {
   overview: 'Overview',
   explorer: 'Explorer',
-  scenarios: 'Scenarios',
+  vintages: 'Vintages',
   methodology: 'Methodology',
 }
 
@@ -45,18 +46,6 @@ function App() {
     }
   }, [])
 
-  const scenarios = useMemo(() => {
-    if (!data) {
-      return []
-    }
-    return Array.from(
-      new Set([
-        data.summary.scenario,
-        data.series.scenario,
-        data.sectors.scenario,
-      ]),
-    )
-  }, [data])
 
   const sectorObserved = useMemo(() => {
     if (!data || !selectedSector) return undefined
@@ -254,10 +243,13 @@ function App() {
                   </li>
                 </ul>
 
-                {/* Data vintage */}
-                <p className="sidebar-vintage">
-                  Data through {data.summary.display_end ?? data.summary.sample_end ?? 'n/a'}
-                </p>
+                {/* Data range */}
+                <div className="sidebar-vintage">
+                  <p className="sidebar-section-label">Data Range</p>
+                  <p className="sidebar-date-value">
+                    {data.summary.display_start ?? 'n/a'}&thinsp;&ndash;&thinsp;{data.summary.display_end ?? data.summary.sample_end ?? 'n/a'}
+                  </p>
+                </div>
 
                 {/* Download link */}
                 <a
@@ -345,29 +337,7 @@ function App() {
             </>
           ) : null}
 
-          {page === 'scenarios' ? (
-            <Panel
-              title="Available Scenarios"
-              subtitle="Scenarios currently discoverable from the exported JSON payloads."
-            >
-              {scenarios.length > 0 ? (
-                <div className="scenario-list">
-                  {scenarios.map((scenario) => (
-                    <article key={scenario} className="scenario-card">
-                      <h3>{scenario}</h3>
-                      <p>Last updated {data.summary.last_updated}</p>
-                      <p>Sample end {data.summary.sample_end ?? 'n/a'}</p>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <EmptyStateCard
-                  title="Scenario data missing"
-                  message="No scenario metadata is available yet. Generate model output to populate this page."
-                />
-              )}
-            </Panel>
-          ) : null}
+          {page === 'vintages' ? <VintagesTab /> : null}
 
           {page === 'methodology' ? (
             <Panel
