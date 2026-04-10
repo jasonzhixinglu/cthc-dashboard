@@ -125,11 +125,73 @@ function App() {
       {data ? (
         <main className="page-grid" aria-live="polite">
           {page === 'overview' ? (
-            <>
-              {/* Key statistics */}
-              <section className="stat-bar">
+            <div className="overview-layout">
+              {/* Left column: two stacked charts */}
+              <div className="overview-charts">
+                <Panel
+                  title="Output Gap"
+                  subtitle={`68% and 95% posterior credible intervals · ${data.series.dates[0] ?? ''}–${data.series.dates[data.series.dates.length - 1] ?? ''}`}
+                >
+                  {seriesReady ? (
+                    <LineChart
+                      labels={data.series.dates}
+                      series={[
+                        {
+                          name: 'Output Gap',
+                          values: data.series.output_gap,
+                          color: 'var(--series-gap)',
+                          band68: data.series.output_gap_p16 && data.series.output_gap_p84
+                            ? { lower: data.series.output_gap_p16, upper: data.series.output_gap_p84 }
+                            : undefined,
+                          band95: data.series.output_gap_p025 && data.series.output_gap_p975
+                            ? { lower: data.series.output_gap_p025, upper: data.series.output_gap_p975 }
+                            : undefined,
+                        },
+                      ]}
+                    />
+                  ) : (
+                    <EmptyStateCard
+                      title="Series data missing"
+                      message="`series.json` has not been generated yet."
+                    />
+                  )}
+                </Panel>
+
+                <Panel
+                  title="Potential Growth"
+                  subtitle={`68% and 95% posterior credible intervals · ${data.series.dates[0] ?? ''}–${data.series.dates[data.series.dates.length - 1] ?? ''}`}
+                >
+                  {seriesReady ? (
+                    <LineChart
+                      labels={data.series.dates}
+                      series={[
+                        {
+                          name: 'Potential Growth',
+                          values: data.series.potential_growth,
+                          color: 'var(--series-growth)',
+                          band68: data.series.potential_growth_p16 && data.series.potential_growth_p84
+                            ? { lower: data.series.potential_growth_p16, upper: data.series.potential_growth_p84 }
+                            : undefined,
+                          band95: data.series.potential_growth_p025 && data.series.potential_growth_p975
+                            ? { lower: data.series.potential_growth_p025, upper: data.series.potential_growth_p975 }
+                            : undefined,
+                        },
+                      ]}
+                    />
+                  ) : (
+                    <EmptyStateCard
+                      title="Series data missing"
+                      message="`series.json` has not been generated yet."
+                    />
+                  )}
+                </Panel>
+              </div>
+
+              {/* Right column: sidebar */}
+              <aside className="overview-sidebar">
+                {/* Key statistics */}
                 {summaryReady ? (
-                  <>
+                  <div className="sidebar-stats">
                     <MetricCard
                       label="Latest Output Gap"
                       value={formatPercent(data.summary.latest_output_gap)}
@@ -138,74 +200,47 @@ function App() {
                     <MetricCard
                       label="Latest Potential Growth"
                       value={formatPercent(data.summary.latest_potential_growth)}
-                      note={`Scenario: ${data.summary.scenario}`}
+                      note="CTHC model estimate"
                     />
-                  </>
-                ) : (
-                  <>
-                    <EmptyStateCard
-                      title="Summary data missing"
-                      message="`summary.json` does not contain current values yet."
-                    />
-                    <EmptyStateCard
-                      title="Summary data missing"
-                      message="`summary.json` does not contain current values yet."
-                    />
-                  </>
-                )}
-              </section>
-
-              {/* Full-width chart */}
-              <Panel
-                title="Output Gap &amp; Potential Growth"
-                subtitle={`Smoothed Kalman estimates with 68% and 95% posterior credible intervals · ${data.series.dates[0] ?? ''}–${data.series.dates[data.series.dates.length - 1] ?? ''}`}
-              >
-                {seriesReady ? (
-                  <LineChart
-                    labels={data.series.dates}
-                    series={[
-                      {
-                        name: 'Output Gap',
-                        values: data.series.output_gap,
-                        color: 'var(--series-gap)',
-                        band68: data.series.output_gap_p16 && data.series.output_gap_p84
-                          ? { lower: data.series.output_gap_p16, upper: data.series.output_gap_p84 }
-                          : undefined,
-                        band95: data.series.output_gap_p025 && data.series.output_gap_p975
-                          ? { lower: data.series.output_gap_p025, upper: data.series.output_gap_p975 }
-                          : undefined,
-                      },
-                      {
-                        name: 'Potential Growth',
-                        values: data.series.potential_growth,
-                        color: 'var(--series-growth)',
-                        band68: data.series.potential_growth_p16 && data.series.potential_growth_p84
-                          ? { lower: data.series.potential_growth_p16, upper: data.series.potential_growth_p84 }
-                          : undefined,
-                        band95: data.series.potential_growth_p025 && data.series.potential_growth_p975
-                          ? { lower: data.series.potential_growth_p025, upper: data.series.potential_growth_p975 }
-                          : undefined,
-                      },
-                    ]}
-                  />
+                  </div>
                 ) : (
                   <EmptyStateCard
-                    title="Series data missing"
-                    message="`series.json` has not been generated yet."
+                    title="Summary data missing"
+                    message="`summary.json` does not contain current values yet."
                   />
                 )}
-              </Panel>
 
-              {/* Plain description */}
-              <p className="dashboard-description">
-                The CTHC model jointly estimates China&rsquo;s output gap and potential growth
-                rate using quarterly GDP and five high-frequency sectoral indicators: imports,
-                electricity output, industrial value added, retail sales, and fixed asset
-                investment. Shaded bands show 68% and 95% posterior credible intervals derived
-                from the Rauch&ndash;Tung&ndash;Striebel smoother applied to each posterior
-                draw.
-              </p>
-            </>
+                {/* Model description */}
+                <ul className="sidebar-bullets">
+                  <li>
+                    Output gap and potential growth estimated jointly from GDP and five
+                    sectoral indicators using a state-space model
+                  </li>
+                  <li>
+                    Shaded bands show 68% and 95% posterior credible intervals from the
+                    Rauch&ndash;Tung&ndash;Striebel smoother
+                  </li>
+                  <li>
+                    Parameters calibrated from Bayesian posterior means &mdash; see
+                    Methodology tab for full details
+                  </li>
+                </ul>
+
+                {/* Data vintage */}
+                <p className="sidebar-vintage">
+                  Data through {data.summary.display_end ?? data.summary.sample_end ?? 'n/a'}
+                </p>
+
+                {/* Download link */}
+                <a
+                  className="sidebar-download"
+                  href={`${import.meta.env.BASE_URL}data/cthc_estimates.csv`}
+                  download
+                >
+                  Download estimates (CSV)
+                </a>
+              </aside>
+            </div>
           ) : null}
 
           {page === 'explorer' ? (
@@ -258,6 +293,34 @@ function App() {
                   <EmptyStateCard
                     title="Series data missing"
                     message="`series.json` does not contain potential-growth observations yet."
+                  />
+                )}
+              </Panel>
+
+              <Panel title="GDP Growth">
+                {seriesReady && (data.series.gdp_growth_qoq || data.series.gdp_growth_yoy) ? (
+                  <LineChart
+                    labels={data.series.dates}
+                    series={[
+                      {
+                        name: 'QoQ Annualized',
+                        values: data.series.gdp_growth_qoq ?? [],
+                        color: '#1a5276',
+                      },
+                      {
+                        name: 'YoY',
+                        values: data.series.gdp_growth_yoy ?? [],
+                        color: '#b26b32',
+                      },
+                    ]}
+                    yAxisLabel="Percent"
+                    yFormatter={(v) => v.toFixed(1)}
+                    sourceNote="Source: NBS via OECD QNA. True percentage growth rates."
+                  />
+                ) : (
+                  <EmptyStateCard
+                    title="GDP growth data missing"
+                    message="Re-run export_site_payload.py to generate gdp_growth_qoq and gdp_growth_yoy."
                   />
                 )}
               </Panel>

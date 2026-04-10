@@ -24,6 +24,8 @@ export interface SeriesPayload {
   potential_growth_p975?: number[]
   gdp_observed: Array<number | null>
   gdp_trend: number[]
+  gdp_growth_qoq?: Array<number | null>
+  gdp_growth_yoy?: Array<number | null>
 }
 
 export interface SectorsPayload {

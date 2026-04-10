@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -110,6 +111,16 @@ def export_site_payload(
             encoding="utf-8",
         )
         written_files[filename] = target_path
+
+    # Generate CSV clipped to display_start..display_end
+    summary_payload = payloads["summary.json"]
+    series_payload = payloads["series.json"]
+    disp_start = summary_payload.get("display_start") or ""
+    disp_end_val: str = display_end or summary_payload.get("display_end") or ""
+    csv_path = resolved_output_dir / "cthc_estimates.csv"
+    _write_estimates_csv(series_payload, disp_start, disp_end_val, csv_path)
+    written_files["cthc_estimates.csv"] = csv_path
+
     return written_files
 
 
@@ -174,6 +185,26 @@ def build_series_payload(
         result, "g_t", potential_growth_scaled, scale=1.0 / 25.0
     )
 
+    # GDP growth rates computed from original log-level values (before ×100 rescaling)
+    # result.observed_data["gdp"] stores log×100, so divide by 100 to get nat-log levels
+    gdp_raw = result.observed_data["gdp"].to_numpy(dtype=float)
+    gdp_log = gdp_raw / 100.0
+    n = len(gdp_log)
+
+    gdp_growth_qoq: list = [None]
+    for i in range(1, n):
+        if np.isfinite(gdp_log[i]) and np.isfinite(gdp_log[i - 1]):
+            gdp_growth_qoq.append(float((np.exp(gdp_log[i] - gdp_log[i - 1]) - 1) * 100 * 4))
+        else:
+            gdp_growth_qoq.append(None)
+
+    gdp_growth_yoy: list = [None, None, None, None]
+    for i in range(4, n):
+        if np.isfinite(gdp_log[i]) and np.isfinite(gdp_log[i - 4]):
+            gdp_growth_yoy.append(float((np.exp(gdp_log[i] - gdp_log[i - 4]) - 1) * 100))
+        else:
+            gdp_growth_yoy.append(None)
+
     payload = {
         "last_updated": _normalize_timestamp(last_updated),
         "scenario": scenario_name,
@@ -190,6 +221,8 @@ def build_series_payload(
         "potential_growth_p975": growth_bands["p975"],
         "gdp_observed": result.observed_data["gdp"].tolist(),
         "gdp_trend": gdp_trend_scaled.tolist(),
+        "gdp_growth_qoq": gdp_growth_qoq,
+        "gdp_growth_yoy": gdp_growth_yoy,
     }
     if include_legacy_aliases:
         payload["scenario_name"] = scenario_name
@@ -346,6 +379,75 @@ def _normalize_timestamp(value: str) -> str:
         return datetime.fromisoformat(value.replace("Z", "+00:00")).date().isoformat()
     except ValueError:
         return value
+
+
+def _write_estimates_csv(
+    series_payload: dict,
+    display_start: str,
+    display_end: str,
+    csv_path: Path,
+) -> None:
+    """Write cthc_estimates.csv clipped to display_start..display_end.
+
+    Output gap and potential growth columns are expressed in percentage points
+    (series.json stores decimal fractions; multiply by 100 here).  GDP growth
+    rates are already in true percentage terms.
+    """
+    dates = series_payload.get("dates", [])
+    columns = [
+        "date",
+        "output_gap",
+        "output_gap_p16",
+        "output_gap_p84",
+        "output_gap_p025",
+        "output_gap_p975",
+        "potential_growth",
+        "potential_growth_p16",
+        "potential_growth_p84",
+        "potential_growth_p025",
+        "potential_growth_p975",
+        "gdp_growth_qoq",
+        "gdp_growth_yoy",
+    ]
+    # Columns stored as decimal fractions in series.json — multiply by 100 for CSV
+    pct_scale_cols = {
+        "output_gap",
+        "output_gap_p16",
+        "output_gap_p84",
+        "output_gap_p025",
+        "output_gap_p975",
+        "potential_growth",
+        "potential_growth_p16",
+        "potential_growth_p84",
+        "potential_growth_p025",
+        "potential_growth_p975",
+    }
+
+    def _fmt(val: object, col: str) -> str:
+        if val is None:
+            return ""
+        try:
+            fval = float(val)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return ""
+        if col in pct_scale_cols:
+            fval *= 100.0
+        return f"{fval:.6f}"
+
+    with csv_path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(columns)
+        for i, date in enumerate(dates):
+            if display_start and date < display_start:
+                continue
+            if display_end and date > display_end:
+                continue
+            row: list[str] = [date]
+            for col in columns[1:]:
+                arr = series_payload.get(col)
+                val = arr[i] if arr is not None and i < len(arr) else None
+                row.append(_fmt(val, col))
+            writer.writerow(row)
 
 
 def _build_legacy_series_records(
