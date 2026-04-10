@@ -237,16 +237,20 @@ function App() {
                 {/* Model description */}
                 <ul className="sidebar-bullets">
                   <li>
-                    Output gap and potential growth estimated jointly from GDP and five
-                    sectoral indicators using a state-space model
+                    Estimates produced by the Cointegrated Trends Harvey Cycle (CTHC)
+                    model &mdash; a multivariate linear Gaussian state-space system
                   </li>
                   <li>
-                    Shaded bands show 68% and 95% posterior credible intervals from the
-                    Rauch&ndash;Tung&ndash;Striebel smoother
+                    Sectoral trends are cointegrated with aggregate potential output;
+                    the output gap follows a bivariate Harvey stochastic cycle
                   </li>
                   <li>
-                    Parameters calibrated from Bayesian posterior means &mdash; see
-                    Methodology tab for full details
+                    Five sectoral indicators: imports, electricity output, industrial
+                    value added, retail sales, and fixed asset investment
+                  </li>
+                  <li>
+                    Shaded bands show 68% and 95% posterior credible intervals from
+                    the Rauch&ndash;Tung&ndash;Striebel smoother
                   </li>
                 </ul>
 
@@ -438,8 +442,8 @@ function App() {
 
                 <section className="methodology-section">
                   <h3>Cite this work</h3>
-                  <pre className="cite-block">{`Gonzalez Gomez, A., Lu, J., and Radzikowski, A. (2026). "A Practical Model for
-Estimating China's Potential Growth Rate and Output Gap."
+                  <pre className="cite-block">{`Gonzalez Gomez, A., Lu, J., and Radzikowski, A. (2026).
+"A Practical Model for Estimating China's Potential Growth Rate and Output Gap."
 IMF Working Paper, forthcoming.`}</pre>
                 </section>
               </div>

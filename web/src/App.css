@@ -359,6 +359,7 @@
 
 .cite-block {
   margin: 0;
+  max-width: 68ch;
   background: var(--panel-strong);
   border: 1px solid var(--border);
   padding: 1rem 1.25rem;
