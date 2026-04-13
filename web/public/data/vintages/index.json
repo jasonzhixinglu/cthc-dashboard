@@ -7,12 +7,6 @@
       "sample_end": "2024-Q4"
     },
     {
-      "data_path": "vintages/2025-03-15/",
-      "id": "2025-03-15",
-      "label": "March 2025",
-      "sample_end": "2024-Q4"
-    },
-    {
       "data_path": "vintages/2026-04-13/",
       "id": "2026-04-13",
       "label": "April 2026",
