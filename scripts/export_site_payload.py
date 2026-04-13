@@ -57,6 +57,60 @@ def _archive_vintage(
     print(f"vintages/{vintage_id}/: {vintage_dir}")
 
 
+# Mapping from the new-style CSV column names to the canonical model names
+_COLUMN_RENAME_MAP = {
+    "lgdp": "gdp",
+    "limp": "imports",
+    "lipel": "electricity",
+    "liva": "industrial_va",
+    "lretail": "retail_sales",
+    "linv": "fixed_asset_investment",
+}
+
+
+def _iso_date_to_quarter(date_str: str) -> str:
+    """Convert an ISO date string (YYYY-MM-DD) to quarter notation (YYYY-Qn).
+
+    Months 1–3 → Q1, 4–6 → Q2, 7–9 → Q3, 10–12 → Q4.
+    Non-ISO strings are returned unchanged.
+    """
+    import re
+    m = re.match(r"^(\d{4})-(\d{2})-\d{2}$", date_str)
+    if m:
+        year, month = m.group(1), int(m.group(2))
+        quarter = (month - 1) // 3 + 1
+        return f"{year}-Q{quarter}"
+    return date_str
+
+
+def _normalize_input_csv(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalise a raw model-input DataFrame to canonical column names and date index.
+
+    Handles two CSV layouts:
+    - Legacy: explicit ``date`` column with quarter strings (``2005-Q2``).
+    - New:    unnamed first column with ISO dates (``2005-04-01``) and
+              abbreviated column names (``lgdp``, ``limp``, …).
+    """
+    # If no "date" column, promote the first unnamed column to "date"
+    if "date" not in df.columns:
+        unnamed = [c for c in df.columns if str(c).startswith("Unnamed")]
+        if unnamed:
+            df = df.rename(columns={unnamed[0]: "date"})
+
+    # Rename abbreviated sector columns to canonical names
+    df = df.rename(columns=_COLUMN_RENAME_MAP)
+
+    # Normalise date strings: ISO → quarter, then legacy QN → Q-N
+    df["date"] = (
+        df["date"]
+        .astype(str)
+        .apply(_iso_date_to_quarter)
+        .str.replace(r"(\d{4})Q(\d)", r"\1-Q\2", regex=True)
+    )
+
+    return df.set_index("date")
+
+
 def main() -> None:
     """Parse arguments, run the model, and write site payload files."""
     parser = argparse.ArgumentParser()
@@ -85,9 +139,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    data = pd.read_csv(args.input_csv)
-    data["date"] = data["date"].str.replace(r"(\d{4})Q(\d)", r"\1-Q\2", regex=True)
-    data = data.set_index("date")
+    data = _normalize_input_csv(pd.read_csv(args.input_csv))
 
     gdp_valid = data["gdp"].dropna() if "gdp" in data.columns else pd.Series(dtype=float)
     display_end = str(gdp_valid.index[-1]) if not gdp_valid.empty else None
